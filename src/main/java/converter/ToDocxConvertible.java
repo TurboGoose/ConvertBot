@@ -1,5 +1,7 @@
 package converter;
 
+import java.io.IOException;
+
 public interface ToDocxConvertible {
-    DocxFile toDocx();
+    DocxFile toDocx() throws IOException;
 }

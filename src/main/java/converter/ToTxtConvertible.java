@@ -1,5 +1,7 @@
 package converter;
 
+import java.io.IOException;
+
 public interface ToTxtConvertible {
-    TxtFile toTxt();
+    TxtFile toTxt() throws IOException;
 }
