@@ -18,7 +18,7 @@ class PdfFileTest {
         PdfFile pdfFile = new PdfFile(sourceFile);
         File txtFile = pdfFile.toTxt().getFile();
         String text = readTextFromFile(txtFile);
-        assertThat(text, is(""));
+        assertThat(text.isBlank(), is(true));
     }
 
     @Test
@@ -27,7 +27,7 @@ class PdfFileTest {
         PdfFile pdfFile = new PdfFile(sourceFile);
         File txtFile = pdfFile.toTxt().getFile();
         String text = readTextFromFile(txtFile);
-        assertThat(text, is("Hello world! "));
+        assertThat(text.contains("Hello world!"), is(true));
     }
 
     @Test
@@ -36,7 +36,8 @@ class PdfFileTest {
         PdfFile pdfFile = new PdfFile(sourceFile);
         File txtFile = pdfFile.toTxt().getFile();
         String text = readTextFromFile(txtFile);
-        assertThat(text, is("Begin  End "));
+        assertThat(text.contains("Begin"), is(true));
+        assertThat(text.contains("End"), is(true));
     }
 
     private String readTextFromFile(File file) throws IOException {
