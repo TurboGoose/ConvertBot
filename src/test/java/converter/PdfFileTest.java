@@ -14,7 +14,7 @@ import static org.hamcrest.Matchers.is;
 class PdfFileTest {
     @Test
     public void convertBlankPdfToTxtFile() throws Exception {
-        File sourceFile = new File(ClassLoader.getSystemResource("pdfForTests/Blank.pdf").toURI());
+        File sourceFile = new File(ClassLoader.getSystemResource("pdfToTxtTests/Blank.pdf").toURI());
         PdfFile pdfFile = new PdfFile(sourceFile);
         File txtFile = pdfFile.toTxt().getFile();
         String text = readTextFromFile(txtFile);
@@ -23,7 +23,7 @@ class PdfFileTest {
 
     @Test
     public void convertPdfWithTextToTxtFile() throws Exception {
-        File sourceFile = new File(ClassLoader.getSystemResource("pdfForTests/Text.pdf").toURI());
+        File sourceFile = new File(ClassLoader.getSystemResource("pdfToTxtTests/Text.pdf").toURI());
         PdfFile pdfFile = new PdfFile(sourceFile);
         File txtFile = pdfFile.toTxt().getFile();
         String text = readTextFromFile(txtFile);
@@ -32,7 +32,7 @@ class PdfFileTest {
 
     @Test
     public void convertPdfWithTextAndPictureToTxtFile() throws Exception {
-        File sourceFile = new File(ClassLoader.getSystemResource("pdfForTests/TextAndPicture.pdf").toURI());
+        File sourceFile = new File(ClassLoader.getSystemResource("pdfToTxtTests/TextAndPicture.pdf").toURI());
         PdfFile pdfFile = new PdfFile(sourceFile);
         File txtFile = pdfFile.toTxt().getFile();
         String text = readTextFromFile(txtFile);

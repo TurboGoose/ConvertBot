@@ -16,17 +16,21 @@ public class PdfFile implements ToTxtConvertible, ToDocxConvertible {
     }
 
     @Override
-    public DocxFile toDocx() throws IOException {
+    public DocxFile toDocx() {
         return null;
     }
 
     @Override
-    public TxtFile toTxt() throws IOException {
-        File txtFile = File.createTempFile(file.getName(), ".txt");
-        txtFile.deleteOnExit();
-        String extractedText = extractRawTextFromPdf();
-        saveTextInFile(extractedText, txtFile);
-        return new TxtFile(txtFile);
+    public TxtFile toTxt() {
+        try {
+            File txtFile = File.createTempFile(file.getName(), ".txt");
+            txtFile.deleteOnExit();
+            String extractedText = extractRawTextFromPdf();
+            saveTextInFile(extractedText, txtFile);
+            return new TxtFile(txtFile);
+        } catch (IOException exc) {
+            throw new IllegalStateException(exc);
+        }
     }
 
     protected String extractRawTextFromPdf() throws IOException {

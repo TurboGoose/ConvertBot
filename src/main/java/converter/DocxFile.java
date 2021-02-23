@@ -1,7 +1,6 @@
 package converter;
 
 import java.io.File;
-import java.io.IOException;
 
 public class DocxFile implements ToTxtConvertible, ToPdfConvertible {
     protected File file;
@@ -11,12 +10,12 @@ public class DocxFile implements ToTxtConvertible, ToPdfConvertible {
     }
 
     @Override
-    public PdfFile toPdf() throws IOException {
+    public PdfFile toPdf() {
         return null;
     }
 
     @Override
-    public TxtFile toTxt() throws IOException {
+    public TxtFile toTxt() {
         return null;
     }
 
