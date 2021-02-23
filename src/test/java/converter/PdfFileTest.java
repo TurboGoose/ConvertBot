@@ -45,4 +45,12 @@ class PdfFileTest {
             return reader.lines().collect(Collectors.joining());
         }
     }
+
+    @Test
+    public void convertPdfWithTextToDocx() throws Exception {
+        File sourceFile = new File(ClassLoader.getSystemResource("pdfToTxtTests/Text.pdf").toURI());
+        PdfFile pdfFile = new PdfFile(sourceFile);
+        File docxFile = pdfFile.toDocx().getFile();
+        System.out.println(docxFile.renameTo(new File("./super.docx")));
+    }
 }
