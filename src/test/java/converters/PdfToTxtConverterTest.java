@@ -1,4 +1,4 @@
-package converter;
+package converters;
 
 import org.junit.jupiter.api.Test;
 
@@ -11,31 +11,30 @@ import java.util.stream.Collectors;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-class PdfFileTest {
+class PdfToTxtConverterTest {
+    Converter converter = new PdfToTxtConverter();
+
     @Test
     public void convertBlankPdfToTxtFile() throws Exception {
         File sourceFile = new File(ClassLoader.getSystemResource("pdfToTxtTests/Blank.pdf").toURI());
-        PdfFile pdfFile = new PdfFile(sourceFile);
-        File txtFile = pdfFile.toTxt().getFile();
-        String text = readTextFromFile(txtFile);
+        File targetFile = converter.convert(sourceFile);
+        String text = readTextFromFile(targetFile);
         assertThat(text.isBlank(), is(true));
     }
 
     @Test
     public void convertPdfWithTextToTxtFile() throws Exception {
         File sourceFile = new File(ClassLoader.getSystemResource("pdfToTxtTests/Text.pdf").toURI());
-        PdfFile pdfFile = new PdfFile(sourceFile);
-        File txtFile = pdfFile.toTxt().getFile();
-        String text = readTextFromFile(txtFile);
+        File targetFile = converter.convert(sourceFile);
+        String text = readTextFromFile(targetFile);
         assertThat(text.contains("Hello world!"), is(true));
     }
 
     @Test
     public void convertPdfWithTextAndPictureToTxtFile() throws Exception {
         File sourceFile = new File(ClassLoader.getSystemResource("pdfToTxtTests/TextAndPicture.pdf").toURI());
-        PdfFile pdfFile = new PdfFile(sourceFile);
-        File txtFile = pdfFile.toTxt().getFile();
-        String text = readTextFromFile(txtFile);
+        File targetFile = converter.convert(sourceFile);
+        String text = readTextFromFile(targetFile);
         assertThat(text.contains("Begin"), is(true));
         assertThat(text.contains("End"), is(true));
     }
@@ -44,13 +43,5 @@ class PdfFileTest {
         try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
             return reader.lines().collect(Collectors.joining());
         }
-    }
-
-    @Test
-    public void convertPdfWithTextToDocx() throws Exception {
-        File sourceFile = new File(ClassLoader.getSystemResource("pdfToTxtTests/Text.pdf").toURI());
-        PdfFile pdfFile = new PdfFile(sourceFile);
-        File docxFile = pdfFile.toDocx().getFile();
-        System.out.println(docxFile.renameTo(new File("./super.docx")));
     }
 }

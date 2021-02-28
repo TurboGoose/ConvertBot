@@ -1,4 +1,4 @@
-package converter;
+package converters;
 
 import com.itextpdf.text.pdf.PdfReader;
 import com.itextpdf.text.pdf.parser.PdfTextExtractor;
@@ -11,11 +11,12 @@ import java.io.IOException;
 import java.io.PrintWriter;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.is;
 
-class TxtFileTest {
+class TxtToPdfConverterTest {
     @TempDir
     File tempDir;
+    Converter converter = new TxtToPdfConverter();
 
     @Test
     public void convertBlankTxtToPdf() throws Exception {
@@ -30,18 +31,18 @@ class TxtFileTest {
     @Test
     public void convertComplexTxtToPdf() throws Exception {
         String text =
-                "+------------+------------+" +
-                "|     1      |     2      |" +
-                "+------------+------------+" +
-                "|     3      |     4      |" +
+                "+------------+------------+\n" +
+                "|     1      |     2      |\n" +
+                "+------------+------------+\n" +
+                "|     3      |     4      |\n" +
                 "+------------+------------+";
         testScenario(text);
     }
 
     private void testScenario(String text) throws Exception {
-        TxtFile txt = new TxtFile(createTxtFile(text));
-        File pdf = txt.toPdf().getFile();
-        assertThat(readPdf(pdf).contains(text), is(true));
+        File sourceFile = createTxtFile(text);
+        File targetFile = converter.convert(sourceFile);
+        assertThat(readPdf(targetFile).contains(text), is(true));
     }
 
     private File createTxtFile(String text) throws FileNotFoundException {
