@@ -1,5 +1,7 @@
-package converters;
+package convertations;
 
+import convertations.converters.Converter;
+import convertations.converters.PdfToTxtConverter;
 import org.junit.jupiter.api.Test;
 
 import java.io.BufferedReader;

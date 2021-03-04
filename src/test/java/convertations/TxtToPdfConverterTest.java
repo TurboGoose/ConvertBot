@@ -1,7 +1,9 @@
-package converters;
+package convertations;
 
 import com.itextpdf.text.pdf.PdfReader;
 import com.itextpdf.text.pdf.parser.PdfTextExtractor;
+import convertations.converters.Converter;
+import convertations.converters.TxtToPdfConverter;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
