@@ -1,8 +1,10 @@
 package bot.processors.noncommands;
 
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
+import org.telegram.telegrambots.meta.api.methods.AnswerCallbackQuery;
 import org.telegram.telegrambots.meta.api.methods.send.SendDocument;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
@@ -30,23 +32,8 @@ public abstract class AbstractScript implements Script {
         sendTextReply(chatId, text, null);
     }
 
-    public void sendDocumentReply(String chatId, String fileId, ReplyKeyboard replyKeyboard) {
-        SendDocument sendDocument = new SendDocument(chatId, new InputFile(fileId));
-        sendDocument.setReplyMarkup(replyKeyboard);
-        try {
-            bot.execute(sendDocument);
-        } catch (TelegramApiException e) {
-            e.printStackTrace();
-        }
-    }
-
     public void sendDocumentReply(String chatId, String fileId) {
-        sendDocumentReply(chatId, fileId, null);
-    }
-
-    public void sendDocumentReply(String chatId, File file, ReplyKeyboard replyKeyboard) {
-        SendDocument sendDocument = new SendDocument(chatId, new InputFile(file));
-        sendDocument.setReplyMarkup(replyKeyboard);
+        SendDocument sendDocument = new SendDocument(chatId, new InputFile(fileId));
         try {
             bot.execute(sendDocument);
         } catch (TelegramApiException e) {
@@ -55,6 +42,25 @@ public abstract class AbstractScript implements Script {
     }
 
     public void sendDocumentReply(String chatId, File file) {
-        sendDocumentReply(chatId, file, null);
+        SendDocument sendDocument = new SendDocument(chatId, new InputFile(file));
+        try {
+            bot.execute(sendDocument);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void answerCallbackQuery(CallbackQuery callbackQuery, String text) {
+        AnswerCallbackQuery answer = new AnswerCallbackQuery(callbackQuery.getId());
+        answer.setText(text);
+        try {
+            bot.execute(answer);
+        } catch (TelegramApiException exc) {
+            exc.printStackTrace();
+        }
+    }
+
+    public void answerCallbackQuery(CallbackQuery callbackQuery) {
+        answerCallbackQuery(callbackQuery, null);
     }
 }

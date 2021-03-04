@@ -15,6 +15,6 @@ public class ConvertCommand extends AbstractCommand {
 
     @Override
     public void execute(AbsSender absSender, User user, Chat chat, String[] strings) {
-        script.start();
+        script.start(chat);
     }
 }

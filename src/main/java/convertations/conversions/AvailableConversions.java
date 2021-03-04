@@ -3,17 +3,11 @@ package convertations.conversions;
 import java.util.*;
 
 public class AvailableConversions {
+    private static final List<Conversion> AVAILABLE = List.of(
+                new Conversion(FileType.PDF, FileType.TXT),
+                new Conversion(FileType.TXT, FileType.PDF));
 
-
-    private static final Set<Conversion> AVAILABLE;
-
-    static {
-        AVAILABLE = new HashSet<>();
-        AVAILABLE.add(new Conversion(FileType.PDF, FileType.TXT));
-        AVAILABLE.add(new Conversion(FileType.TXT, FileType.PDF));
-    }
-
-    public static Set<Conversion> getAvailable() {
+    public static List<Conversion> getAvailable() {
         return AVAILABLE;
     }
 

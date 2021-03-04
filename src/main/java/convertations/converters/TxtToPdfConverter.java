@@ -2,7 +2,7 @@ package convertations.converters;
 
 import com.itextpdf.text.*;
 import com.itextpdf.text.pdf.PdfWriter;
-import tools.files.ExtensionTools;
+import tools.files.FileNameTools;
 
 import java.io.*;
 
@@ -20,7 +20,7 @@ public class TxtToPdfConverter implements Converter {
     }
 
     private void checkExtension(File file) {
-        String extension = ExtensionTools.extractExtension(file);
+        String extension = FileNameTools.extractExtension(file);
         if (!"txt".equals(extension)) {
             throw new IllegalArgumentException(
                     String.format("Wrong file extension: got \".%s\" when \".txt\" expected", extension));
@@ -28,7 +28,7 @@ public class TxtToPdfConverter implements Converter {
     }
 
     private File createTempPdfFile(File file) throws IOException {
-        File tempPdfFile = File.createTempFile(ExtensionTools.extractFilenameWithoutExtension(file), ".pdf");
+        File tempPdfFile = File.createTempFile(FileNameTools.extractFilenameWithoutExtension(file), ".pdf");
         tempPdfFile.deleteOnExit();
         return tempPdfFile;
     }
