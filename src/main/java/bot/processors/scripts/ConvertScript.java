@@ -22,27 +22,8 @@ import java.util.List;
 import java.util.Map;
 
 public class ConvertScript extends AbstractScript {
-    private enum DialogStage {CHOOSING_FILE, LOADING_FILE, NONE}
     private final AbstractConverterFactory factory = new ConverterFactory();
     private final Map<String, State> chatStates = new HashMap<>();
-
-    private static class State {
-        boolean running;
-        DialogStage currentDialogStage;
-        Conversion chosenConversion;
-
-        private void setStart() {
-            running = true;
-            currentDialogStage = DialogStage.CHOOSING_FILE;
-            chosenConversion = null;
-        }
-
-        private void setStop() {
-            running = false;
-            currentDialogStage = DialogStage.NONE;
-            chosenConversion = null;
-        }
-    }
 
     public ConvertScript(TelegramLongPollingBot bot) {
         super(bot);
@@ -51,8 +32,31 @@ public class ConvertScript extends AbstractScript {
     @Override
     public void start(String chatId) {
         chatStates.putIfAbsent(chatId, new State());
-        chatStates.get(chatId).setStart();
+        chatStates.get(chatId).setChoosingConversion();
         sendTextReply(chatId, "What type of conversion do you want to do?", getKeyboardWithAvailableConversions());
+    }
+
+    private ReplyKeyboard getKeyboardWithAvailableConversions() {
+        final int MAX_BUTTONS_IN_ROW = 2;
+        List<Conversion> conversions = AvailableConversions.getAvailable();
+        List<List<InlineKeyboardButton>> buttons = new ArrayList<>();
+        int count = 0;
+        List<InlineKeyboardButton> row = new ArrayList<>();
+        for (Conversion conversion : conversions) {
+            if (count == MAX_BUTTONS_IN_ROW) {
+                buttons.add(row);
+                row = new ArrayList<>();
+                count = 0;
+            }
+            InlineKeyboardButton button = new InlineKeyboardButton(conversion.toString());
+            button.setCallbackData(conversion.toString());
+            row.add(button);
+            count++;
+        }
+        if (!row.isEmpty()) {
+            buttons.add(row);
+        }
+        return new InlineKeyboardMarkup(buttons);
     }
 
     @Override
@@ -60,34 +64,33 @@ public class ConvertScript extends AbstractScript {
         if (update.hasCallbackQuery()) {
             CallbackQuery callbackQuery = update.getCallbackQuery();
             String chatId = callbackQuery.getMessage().getChatId().toString();
+            answerCallbackQuery(callbackQuery);
             if (chatStates.containsKey(chatId)) {
                 State state = chatStates.get(chatId);
-                if (state.running && state.currentDialogStage == DialogStage.CHOOSING_FILE) {
-                    answerCallbackQuery(callbackQuery);
-                    state.chosenConversion = Conversion.parse(callbackQuery.getData());
-                    sendTextReply(callbackQuery.getMessage().getChatId().toString(),
-                            "Load your " + state.chosenConversion.getFrom().toString() + " file");
-                    state.currentDialogStage = DialogStage.LOADING_FILE;
+                if (state.isChoosingConversion()) {
+                    Conversion chosenConversion = Conversion.parse(callbackQuery.getData());
+                    sendTextReply(chatId, "Load your " + chosenConversion.getFrom().toString() + " file");
+                    state.setLoadingFile(chosenConversion);
                 }
             }
-            answerCallbackQuery(callbackQuery);
         } else if (update.hasMessage()) {
             Message message = update.getMessage();
             String chatId = message.getChatId().toString();
             if (chatStates.containsKey(chatId)) {
                 State state = chatStates.get(chatId);
-                if (state.running && state.currentDialogStage == DialogStage.LOADING_FILE) {
+                if (state.isLoadingFile()) {
                     if (message.hasDocument()) {
                         Document document = message.getDocument();
                         String filename = document.getFileName();
                         String extension = FileNameTools.extractExtension(filename).toLowerCase();
                         String nameWithoutExtension = FileNameTools.extractFilenameWithoutExtension(filename);
-                        if (extension.equals(state.chosenConversion.getFrom().name().toLowerCase())) {
+                        Conversion conversion = state.getConversion();
+                        if (extension.equals(conversion.getFrom().name().toLowerCase())) {
                             File sourceFile = downloadDocument(document);
-                            Converter converter = factory.getConverter(state.chosenConversion);
+                            Converter converter = factory.getConverter(conversion);
                             File outputFile = converter.convert(sourceFile);
                             sendDocumentReply(chatId, outputFile,
-                                    nameWithoutExtension + "." + state.chosenConversion.getTo().name().toLowerCase());
+                                    nameWithoutExtension + "." + conversion.getTo().name().toLowerCase());
                         } else {
                             sendTextReply(chatId, "Wrong file extension");
                         }
@@ -123,26 +126,41 @@ public class ConvertScript extends AbstractScript {
         }
     }
 
-    private ReplyKeyboard getKeyboardWithAvailableConversions() {
-        final int MAX_BUTTONS_IN_ROW = 2;
-        List<Conversion> conversions = AvailableConversions.getAvailable();
-        List<List<InlineKeyboardButton>> buttons = new ArrayList<>();
-        int count = 0;
-        List<InlineKeyboardButton> row = new ArrayList<>();
-        for (Conversion conversion : conversions) {
-            if (count == MAX_BUTTONS_IN_ROW) {
-                buttons.add(row);
-                row = new ArrayList<>();
-                count = 0;
-            }
-            InlineKeyboardButton button = new InlineKeyboardButton(conversion.toString());
-            button.setCallbackData(conversion.toString());
-            row.add(button);
-            count++;
+    private static class State {
+        private enum DialogStage {CHOOSING_CONVERSION, LOADING_FILE, NONE}
+
+        private boolean running = false;
+        private DialogStage currentDialogStage = DialogStage.NONE;
+        private Conversion conversion = null;
+
+        Conversion getConversion() {
+            return conversion;
         }
-        if (!row.isEmpty()) {
-            buttons.add(row);
+
+        void setChoosingConversion() {
+            running = true;
+            currentDialogStage = DialogStage.CHOOSING_CONVERSION;
+            conversion = null;
         }
-        return new InlineKeyboardMarkup(buttons);
+
+        boolean isChoosingConversion() {
+            return running && currentDialogStage == DialogStage.CHOOSING_CONVERSION;
+        }
+
+        void setLoadingFile(Conversion conversion) {
+            running = true;
+            this.conversion = conversion;
+            currentDialogStage = DialogStage.LOADING_FILE;
+        }
+
+        boolean isLoadingFile() {
+            return running && currentDialogStage == DialogStage.LOADING_FILE;
+        }
+
+        void setStop() {
+            running = false;
+            currentDialogStage = DialogStage.NONE;
+            conversion = null;
+        }
     }
 }

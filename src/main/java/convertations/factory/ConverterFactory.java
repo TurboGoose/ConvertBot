@@ -14,7 +14,7 @@ public class ConverterFactory implements AbstractConverterFactory {
                 conversion.getTo().equals(FileType.TXT)) {
             result = new PdfToTxtConverter();
         } else if (conversion.getFrom().equals(FileType.TXT) &&
-                conversion.getFrom().equals(FileType.PDF)) {
+                conversion.getTo().equals(FileType.PDF)) {
             result = new TxtToPdfConverter();
         }
         return result;
