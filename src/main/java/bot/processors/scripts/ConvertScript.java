@@ -17,63 +17,85 @@ import tools.files.FileNameTools;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class ConvertScript extends AbstractScript {
-    private enum State {CHOOSING_FILE, LOADING_FILE}
-    private boolean running = false;
+    private enum DialogStage {CHOOSING_FILE, LOADING_FILE, NONE}
     private final AbstractConverterFactory factory = new ConverterFactory();
-    private State currentStateOfDialog;
-    private Conversion chosenConversion;
+    private final Map<String, State> chatStates = new HashMap<>();
 
+    private static class State {
+        boolean running;
+        DialogStage currentDialogStage;
+        Conversion chosenConversion;
+
+        private void setStart() {
+            running = true;
+            currentDialogStage = DialogStage.CHOOSING_FILE;
+            chosenConversion = null;
+        }
+
+        private void setStop() {
+            running = false;
+            currentDialogStage = DialogStage.NONE;
+            chosenConversion = null;
+        }
+    }
 
     public ConvertScript(TelegramLongPollingBot bot) {
         super(bot);
     }
 
-    public static ConvertScript getInstance(TelegramLongPollingBot bot) {
-        return new ConvertScript(bot);
-    }
-
     @Override
-    public void start(Chat chat) {
-        running = true;
-        currentStateOfDialog = State.CHOOSING_FILE;
-        String text = "What type of conversion do you want to do?";
-        sendTextReply(chat.getId().toString(), text, getKeyboardWithAvailableConversions());
+    public void start(String chatId) {
+        chatStates.putIfAbsent(chatId, new State());
+        chatStates.get(chatId).setStart();
+        sendTextReply(chatId, "What type of conversion do you want to do?", getKeyboardWithAvailableConversions());
     }
 
     @Override
     public void update(Update update) {
-        if (running) {
-            if (currentStateOfDialog == State.CHOOSING_FILE && update.hasCallbackQuery()) {
-                CallbackQuery callback = update.getCallbackQuery();
-                answerCallbackQuery(callback);
-                chosenConversion = Conversion.parse(callback.getData());
-                sendTextReply(callback.getMessage().getChatId().toString(),
-                        "Load your " + chosenConversion.getFrom().toString() + " file");
-                currentStateOfDialog = State.LOADING_FILE;
-            } else if (currentStateOfDialog == State.LOADING_FILE && update.hasMessage()) {
-                Message message = update.getMessage();
-                String chatId = message.getChatId().toString();
-                if (message.hasDocument()) {
-                    Document document = message.getDocument();
-                    String filename = document.getFileName();
-                    String extension = FileNameTools.extractExtension(filename).toLowerCase();
-                    String nameWithoutExtension = FileNameTools.extractFilenameWithoutExtension(filename);
-                    if (extension.equals(chosenConversion.getFrom().name().toLowerCase())) {
-                        File sourceFile = downloadDocument(document);
-                        Converter converter = factory.getConverter(chosenConversion);
-                        File outputFile = converter.convert(sourceFile);
-                        sendDocumentReply(chatId, outputFile,
-                                nameWithoutExtension + "." + chosenConversion.getTo().name().toLowerCase());
-                    } else {
-                        sendTextReply(chatId, "Wrong file extension");
-                    }
-                } else {
-                    sendTextReply(chatId, "Document required");
+        if (update.hasCallbackQuery()) {
+            CallbackQuery callbackQuery = update.getCallbackQuery();
+            String chatId = callbackQuery.getMessage().getChatId().toString();
+            if (chatStates.containsKey(chatId)) {
+                State state = chatStates.get(chatId);
+                if (state.running && state.currentDialogStage == DialogStage.CHOOSING_FILE) {
+                    answerCallbackQuery(callbackQuery);
+                    state.chosenConversion = Conversion.parse(callbackQuery.getData());
+                    sendTextReply(callbackQuery.getMessage().getChatId().toString(),
+                            "Load your " + state.chosenConversion.getFrom().toString() + " file");
+                    state.currentDialogStage = DialogStage.LOADING_FILE;
                 }
-                stop();
+            }
+            answerCallbackQuery(callbackQuery);
+        } else if (update.hasMessage()) {
+            Message message = update.getMessage();
+            String chatId = message.getChatId().toString();
+            if (chatStates.containsKey(chatId)) {
+                State state = chatStates.get(chatId);
+                if (state.running && state.currentDialogStage == DialogStage.LOADING_FILE) {
+                    if (message.hasDocument()) {
+                        Document document = message.getDocument();
+                        String filename = document.getFileName();
+                        String extension = FileNameTools.extractExtension(filename).toLowerCase();
+                        String nameWithoutExtension = FileNameTools.extractFilenameWithoutExtension(filename);
+                        if (extension.equals(state.chosenConversion.getFrom().name().toLowerCase())) {
+                            File sourceFile = downloadDocument(document);
+                            Converter converter = factory.getConverter(state.chosenConversion);
+                            File outputFile = converter.convert(sourceFile);
+                            sendDocumentReply(chatId, outputFile,
+                                    nameWithoutExtension + "." + state.chosenConversion.getTo().name().toLowerCase());
+                        } else {
+                            sendTextReply(chatId, "Wrong file extension");
+                        }
+                    } else {
+                        sendTextReply(chatId, "Document required");
+                    }
+                    stop(chatId);
+                }
             }
         }
     }
@@ -95,8 +117,10 @@ public class ConvertScript extends AbstractScript {
     }
 
     @Override
-    public void stop() {
-        running = false;
+    public void stop(String chatId) {
+        if (chatStates.containsKey(chatId)) {
+            chatStates.get(chatId).setStop();
+        }
     }
 
     private ReplyKeyboard getKeyboardWithAvailableConversions() {
