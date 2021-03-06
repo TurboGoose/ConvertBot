@@ -1,4 +1,4 @@
-package bot.processors.noncommands;
+package bot.processors.scripts;
 
 import convertations.conversions.AvailableConversions;
 import convertations.conversions.Conversion;
@@ -31,6 +31,10 @@ public class ConvertScript extends AbstractScript {
         super(bot);
     }
 
+    public static ConvertScript getInstance(TelegramLongPollingBot bot) {
+        return new ConvertScript(bot);
+    }
+
     @Override
     public void start(Chat chat) {
         running = true;
@@ -41,28 +45,28 @@ public class ConvertScript extends AbstractScript {
 
     @Override
     public void update(Update update) {
-        if (update.hasMessage()) {
-            sendTextReply(update.getMessage().getChatId().toString(), Boolean.toString(running));
-        }
         if (running) {
             if (currentStateOfDialog == State.CHOOSING_FILE && update.hasCallbackQuery()) {
                 CallbackQuery callback = update.getCallbackQuery();
                 answerCallbackQuery(callback);
                 chosenConversion = Conversion.parse(callback.getData());
-                String text = "Load your " + chosenConversion.getFrom().toString() + " file";
-                sendTextReply(callback.getMessage().getChatId().toString(), text);
+                sendTextReply(callback.getMessage().getChatId().toString(),
+                        "Load your " + chosenConversion.getFrom().toString() + " file");
                 currentStateOfDialog = State.LOADING_FILE;
             } else if (currentStateOfDialog == State.LOADING_FILE && update.hasMessage()) {
                 Message message = update.getMessage();
                 String chatId = message.getChatId().toString();
                 if (message.hasDocument()) {
                     Document document = message.getDocument();
-                    String extension = FileNameTools.extractExtension(document.getFileName());
+                    String filename = document.getFileName();
+                    String extension = FileNameTools.extractExtension(filename).toLowerCase();
+                    String nameWithoutExtension = FileNameTools.extractFilenameWithoutExtension(filename);
                     if (extension.equals(chosenConversion.getFrom().name().toLowerCase())) {
                         File sourceFile = downloadDocument(document);
                         Converter converter = factory.getConverter(chosenConversion);
                         File outputFile = converter.convert(sourceFile);
-                        sendDocumentReply(chatId, outputFile);
+                        sendDocumentReply(chatId, outputFile,
+                                nameWithoutExtension + "." + chosenConversion.getTo().name().toLowerCase());
                     } else {
                         sendTextReply(chatId, "Wrong file extension");
                     }
@@ -95,13 +99,14 @@ public class ConvertScript extends AbstractScript {
         running = false;
     }
 
-    private ReplyKeyboard getKeyboardWithAvailableConversions(int maxButtonsInRow) {
+    private ReplyKeyboard getKeyboardWithAvailableConversions() {
+        final int MAX_BUTTONS_IN_ROW = 2;
         List<Conversion> conversions = AvailableConversions.getAvailable();
         List<List<InlineKeyboardButton>> buttons = new ArrayList<>();
         int count = 0;
         List<InlineKeyboardButton> row = new ArrayList<>();
         for (Conversion conversion : conversions) {
-            if (count == maxButtonsInRow) {
+            if (count == MAX_BUTTONS_IN_ROW) {
                 buttons.add(row);
                 row = new ArrayList<>();
                 count = 0;
@@ -115,9 +120,5 @@ public class ConvertScript extends AbstractScript {
             buttons.add(row);
         }
         return new InlineKeyboardMarkup(buttons);
-    }
-
-    private ReplyKeyboard getKeyboardWithAvailableConversions() {
-        return getKeyboardWithAvailableConversions(2);
     }
 }

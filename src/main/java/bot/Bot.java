@@ -3,31 +3,29 @@ package bot;
 import bot.processors.commands.ConvertCommand;
 import bot.processors.commands.HelpCommand;
 import bot.processors.commands.StartCommand;
-import bot.processors.noncommands.ConvertScript;
-import bot.processors.noncommands.Script;
+import bot.processors.scripts.ConvertScript;
+import bot.processors.scripts.Script;
 import org.telegram.telegrambots.extensions.bots.commandbot.TelegramLongPollingCommandBot;
-import org.telegram.telegrambots.extensions.bots.commandbot.commands.BotCommand;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
 public class Bot extends TelegramLongPollingCommandBot {
     private String BOT_NAME;
     private String BOT_TOKEN;
-    private final Script script;
+    private final List<Script> scripts = new ArrayList<>();
 
     public Bot() {
         readBotProperties();
-        this.script = new ConvertScript(this);
-        List<BotCommand> commands = List.of(
-                new StartCommand("start", "Start bot"),
-                new HelpCommand("help", "Request help"),
-                new ConvertCommand("convert", "Convert files", script)
-        );
-        commands.forEach(this::register);
+        register(new StartCommand("start", "Start bot"));
+        register(new HelpCommand("help", "Request help"));
+        Script convertScript = new ConvertScript(this);
+        register(new ConvertCommand("convert", "Convert files", convertScript));
+        scripts.add(convertScript);
     }
 
     private void readBotProperties() {
@@ -53,6 +51,6 @@ public class Bot extends TelegramLongPollingCommandBot {
 
     @Override
     public void processNonCommandUpdate(Update update) {
-        script.update(update);
+        scripts.forEach(s -> s.update(update));
     }
 }

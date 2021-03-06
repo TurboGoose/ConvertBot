@@ -1,4 +1,4 @@
-package bot.processors.noncommands;
+package bot.processors.scripts;
 
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.AnswerCallbackQuery;
@@ -21,6 +21,14 @@ public abstract class AbstractScript implements Script {
     public void sendTextReply(String chatId, String text, ReplyKeyboard replyKeyboard) {
         SendMessage sendMessage = new SendMessage(chatId, text);
         sendMessage.setReplyMarkup(replyKeyboard);
+        executeSendingTextReply(sendMessage);
+    }
+
+    public void sendTextReply(String chatId, String text) {
+        executeSendingTextReply(new SendMessage(chatId, text));
+    }
+
+    private void executeSendingTextReply(SendMessage sendMessage) {
         try {
             bot.execute(sendMessage);
         } catch (TelegramApiException e) {
@@ -28,21 +36,19 @@ public abstract class AbstractScript implements Script {
         }
     }
 
-    public void sendTextReply(String chatId, String text) {
-        sendTextReply(chatId, text, null);
-    }
-
     public void sendDocumentReply(String chatId, String fileId) {
-        SendDocument sendDocument = new SendDocument(chatId, new InputFile(fileId));
-        try {
-            bot.execute(sendDocument);
-        } catch (TelegramApiException e) {
-            e.printStackTrace();
-        }
+        executeSendingDocument(new SendDocument(chatId, new InputFile(fileId)));
     }
 
     public void sendDocumentReply(String chatId, File file) {
-        SendDocument sendDocument = new SendDocument(chatId, new InputFile(file));
+        executeSendingDocument(new SendDocument(chatId, new InputFile(file)));
+    }
+
+    public void sendDocumentReply(String chatId, File file, String filename) {
+        executeSendingDocument(new SendDocument(chatId, new InputFile(file, filename)));
+    }
+
+    private void executeSendingDocument(SendDocument sendDocument) {
         try {
             bot.execute(sendDocument);
         } catch (TelegramApiException e) {
@@ -53,14 +59,18 @@ public abstract class AbstractScript implements Script {
     public void answerCallbackQuery(CallbackQuery callbackQuery, String text) {
         AnswerCallbackQuery answer = new AnswerCallbackQuery(callbackQuery.getId());
         answer.setText(text);
+        executeAnsweringCallbackQuery(answer);
+    }
+
+    public void answerCallbackQuery(CallbackQuery callbackQuery) {
+        executeAnsweringCallbackQuery(new AnswerCallbackQuery(callbackQuery.getId()));
+    }
+
+    private void executeAnsweringCallbackQuery(AnswerCallbackQuery answer) {
         try {
             bot.execute(answer);
         } catch (TelegramApiException exc) {
             exc.printStackTrace();
         }
-    }
-
-    public void answerCallbackQuery(CallbackQuery callbackQuery) {
-        answerCallbackQuery(callbackQuery, null);
     }
 }

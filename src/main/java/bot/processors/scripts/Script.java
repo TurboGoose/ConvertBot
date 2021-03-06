@@ -1,4 +1,4 @@
-package bot.processors.noncommands;
+package bot.processors.scripts;
 
 import org.telegram.telegrambots.meta.api.objects.Chat;
 import org.telegram.telegrambots.meta.api.objects.Update;

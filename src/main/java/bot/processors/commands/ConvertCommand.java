@@ -1,6 +1,6 @@
 package bot.processors.commands;
 
-import bot.processors.noncommands.Script;
+import bot.processors.scripts.Script;
 import org.telegram.telegrambots.meta.api.objects.Chat;
 import org.telegram.telegrambots.meta.api.objects.User;
 import org.telegram.telegrambots.meta.bots.AbsSender;
