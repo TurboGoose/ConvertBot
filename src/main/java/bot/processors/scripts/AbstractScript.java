@@ -5,6 +5,7 @@ import org.telegram.telegrambots.meta.api.methods.AnswerCallbackQuery;
 import org.telegram.telegrambots.meta.api.methods.send.SendDocument;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
+import org.telegram.telegrambots.meta.api.objects.Document;
 import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
@@ -36,24 +37,25 @@ public abstract class AbstractScript implements Script {
         }
     }
 
-    public void sendDocumentReply(String chatId, String fileId) {
-        executeSendingDocument(new SendDocument(chatId, new InputFile(fileId)));
+    public Document sendDocumentReply(String chatId, String fileId) {
+        return executeSendingDocument(new SendDocument(chatId, new InputFile(fileId)));
     }
 
-    public void sendDocumentReply(String chatId, File file) {
-        executeSendingDocument(new SendDocument(chatId, new InputFile(file)));
+    public Document sendDocumentReply(String chatId, File file) {
+        return executeSendingDocument(new SendDocument(chatId, new InputFile(file)));
     }
 
-    public void sendDocumentReply(String chatId, File file, String filename) {
-        executeSendingDocument(new SendDocument(chatId, new InputFile(file, filename)));
+    public Document sendDocumentReply(String chatId, File file, String filename) {
+        return executeSendingDocument(new SendDocument(chatId, new InputFile(file, filename)));
     }
 
-    private void executeSendingDocument(SendDocument sendDocument) {
+    private Document executeSendingDocument(SendDocument sendDocument) {
         try {
-            bot.execute(sendDocument);
+            return bot.execute(sendDocument).getDocument();
         } catch (TelegramApiException e) {
             e.printStackTrace();
         }
+        return null;
     }
 
     public void answerCallbackQuery(CallbackQuery callbackQuery, String text) {

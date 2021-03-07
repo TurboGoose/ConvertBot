@@ -1,5 +1,9 @@
 package bot.processors.scripts;
 
+import bot.filemanager.ConversionInfo;
+import bot.filemanager.FileLoadingManager;
+import bot.filemanager.LoadingInfo;
+import bot.filemanager.TelegramFileLoadingManager;
 import convertations.conversions.AvailableConversions;
 import convertations.conversions.Conversion;
 import convertations.converters.Converter;
@@ -16,6 +20,7 @@ import tools.files.FileNameTools;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -23,6 +28,7 @@ import java.util.Map;
 
 public class ConvertScript extends AbstractScript {
     private final AbstractConverterFactory factory = new ConverterFactory();
+    private final FileLoadingManager<ConversionInfo, LoadingInfo> loadingManager = new TelegramFileLoadingManager();
     private final Map<String, State> chatStates = new HashMap<>();
 
     public ConvertScript(TelegramLongPollingBot bot) {
@@ -81,16 +87,20 @@ public class ConvertScript extends AbstractScript {
                 if (state.isLoadingFile()) {
                     if (message.hasDocument()) {
                         Document document = message.getDocument();
-                        String filename = document.getFileName();
-                        String extension = FileNameTools.extractExtension(filename).toLowerCase();
-                        String nameWithoutExtension = FileNameTools.extractFilenameWithoutExtension(filename);
+                        String extension = FileNameTools.extractExtension(document.getFileName()).toLowerCase();
                         Conversion conversion = state.getConversion();
                         if (extension.equals(conversion.getFrom().name().toLowerCase())) {
-                            File sourceFile = downloadDocument(document);
-                            Converter converter = factory.getConverter(conversion);
-                            File outputFile = converter.convert(sourceFile);
-                            sendDocumentReply(chatId, outputFile,
-                                    nameWithoutExtension + "." + conversion.getTo().name().toLowerCase());
+                            ConversionInfo conversionInfo = new ConversionInfo(document.getFileUniqueId(), conversion);
+                            if (loadingManager.contains(conversionInfo)) {
+                                LoadingInfo loadingInfo = loadingManager.get(conversionInfo);
+                                if (loadingInfo.getLoadingIdExpired().isBefore(LocalDateTime.now())) {
+                                    convertFileThenLoadAndUpdateLoadingInfo(chatId, document, conversion);
+                                } else {
+                                    sendDocumentReply(chatId, loadingInfo.getLoadingId());
+                                }
+                            } else {
+                                convertFileThenLoadAndUpdateLoadingInfo(chatId, document, conversion);
+                            }
                         } else {
                             sendTextReply(chatId, "Wrong file extension");
                         }
@@ -101,6 +111,18 @@ public class ConvertScript extends AbstractScript {
                 }
             }
         }
+    }
+
+    private void convertFileThenLoadAndUpdateLoadingInfo(String chatId, Document document, Conversion conversion) {
+        File inputFile = downloadDocument(document);
+        Converter converter = factory.getConverter(conversion);
+        File outputFile = converter.convert(inputFile);
+        Document uploadedDocument = sendDocumentReply(chatId, outputFile,
+                FileNameTools.extractFilenameWithoutExtension(document.getFileName()) +
+                        "." + conversion.getTo().name().toLowerCase());
+        LoadingInfo updatedLoadingInfo = new LoadingInfo(uploadedDocument.getFileId(),
+                LocalDateTime.now().plusHours(1));
+        loadingManager.put(new ConversionInfo(document.getFileUniqueId(), conversion), updatedLoadingInfo);
     }
 
     private File downloadDocument(Document document) {
