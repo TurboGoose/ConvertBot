@@ -1,10 +1,10 @@
 package bot;
 
-import bot.processors.commands.ConvertCommand;
-import bot.processors.commands.HelpCommand;
-import bot.processors.commands.StartCommand;
-import bot.processors.scripts.ConvertScript;
-import bot.processors.scripts.Script;
+import bot.handlers.commands.ConvertCommand;
+import bot.handlers.commands.HelpCommand;
+import bot.handlers.commands.StartCommand;
+import bot.handlers.scripts.ConvertScript;
+import bot.handlers.scripts.Script;
 import org.telegram.telegrambots.extensions.bots.commandbot.TelegramLongPollingCommandBot;
 import org.telegram.telegrambots.meta.api.objects.Update;
 

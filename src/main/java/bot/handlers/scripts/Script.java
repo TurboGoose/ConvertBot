@@ -1,4 +1,4 @@
-package bot.processors.scripts;
+package bot.handlers.scripts;
 
 import org.telegram.telegrambots.meta.api.objects.Update;
 

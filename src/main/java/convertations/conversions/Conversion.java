@@ -19,9 +19,8 @@ public class Conversion {
         return to;
     }
 
-    // Only for strings with format [FileType]->[FileType]. For example: "PDF->TXT".
     public static Conversion parse(String str) {
-        String[] fromTo = str.split("->");
+        String[] fromTo = str.split(" ➔ ");
         return new Conversion(FileType.valueOf(fromTo[0]), FileType.valueOf(fromTo[1]));
     }
 
@@ -41,6 +40,6 @@ public class Conversion {
 
     @Override
     public String toString() {
-        return from.name() + "->" + to.name();
+        return from.name() + " ➔ " + to.name();
     }
 }

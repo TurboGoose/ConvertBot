@@ -1,9 +1,9 @@
-package bot.processors.scripts;
+package bot.handlers.scripts;
 
-import bot.filemanager.ConversionInfo;
-import bot.filemanager.FileLoadingManager;
-import bot.filemanager.LoadingInfo;
-import bot.filemanager.TelegramFileLoadingManager;
+import bot.fileloadingmanagers.ConversionInfo;
+import bot.fileloadingmanagers.FileLoadingManager;
+import bot.fileloadingmanagers.LoadingInfo;
+import bot.fileloadingmanagers.TelegramFileLoadingManager;
 import convertations.conversions.AvailableConversions;
 import convertations.conversions.Conversion;
 import convertations.converters.Converter;
@@ -120,6 +120,8 @@ public class ConvertScript extends AbstractScript {
         Document uploadedDocument = sendDocumentReply(chatId, outputFile,
                 FileNameTools.extractFilenameWithoutExtension(document.getFileName()) +
                         "." + conversion.getTo().name().toLowerCase());
+        inputFile.delete();
+        outputFile.delete();
         LoadingInfo updatedLoadingInfo = new LoadingInfo(uploadedDocument.getFileId(),
                 LocalDateTime.now().plusHours(1));
         loadingManager.put(new ConversionInfo(document.getFileUniqueId(), conversion), updatedLoadingInfo);

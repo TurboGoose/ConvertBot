@@ -1,4 +1,4 @@
-package bot.filemanager;
+package bot.fileloadingmanagers;
 
 import convertations.conversions.Conversion;
 

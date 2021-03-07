@@ -1,4 +1,4 @@
-package bot.filemanager;
+package bot.fileloadingmanagers;
 
 import java.util.HashMap;
 import java.util.Map;

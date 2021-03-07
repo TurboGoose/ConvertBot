@@ -1,4 +1,4 @@
-package bot.processors.scripts;
+package bot.handlers.scripts;
 
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.AnswerCallbackQuery;
@@ -41,10 +41,6 @@ public abstract class AbstractScript implements Script {
         return executeSendingDocument(new SendDocument(chatId, new InputFile(fileId)));
     }
 
-    public Document sendDocumentReply(String chatId, File file) {
-        return executeSendingDocument(new SendDocument(chatId, new InputFile(file)));
-    }
-
     public Document sendDocumentReply(String chatId, File file, String filename) {
         return executeSendingDocument(new SendDocument(chatId, new InputFile(file, filename)));
     }
@@ -56,12 +52,6 @@ public abstract class AbstractScript implements Script {
             e.printStackTrace();
         }
         return null;
-    }
-
-    public void answerCallbackQuery(CallbackQuery callbackQuery, String text) {
-        AnswerCallbackQuery answer = new AnswerCallbackQuery(callbackQuery.getId());
-        answer.setText(text);
-        executeAnsweringCallbackQuery(answer);
     }
 
     public void answerCallbackQuery(CallbackQuery callbackQuery) {
