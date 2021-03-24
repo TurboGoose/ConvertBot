@@ -3,11 +3,11 @@ package bot.fileloadingmanagers;
 import java.util.HashMap;
 import java.util.Map;
 
-public class TelegramFileLoadingManager implements FileLoadingManager<ConversionInfo, LoadingInfo> {
-    private final Map<ConversionInfo, LoadingInfo> files = new HashMap<>();
+public class TelegramFileLoadingManager implements FileLoadingManager<ConversionInfo, String> {
+    private final Map<ConversionInfo, String> files = new HashMap<>();
 
     @Override
-    public void put(ConversionInfo key, LoadingInfo value) {
+    public void put(ConversionInfo key, String value) {
         files.put(key, value);
     }
 
@@ -22,7 +22,7 @@ public class TelegramFileLoadingManager implements FileLoadingManager<Conversion
     }
 
     @Override
-    public LoadingInfo get(ConversionInfo key) {
+    public String get(ConversionInfo key) {
         return files.get(key);
     }
 }

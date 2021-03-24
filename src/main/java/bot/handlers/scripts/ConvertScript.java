@@ -2,7 +2,6 @@ package bot.handlers.scripts;
 
 import bot.fileloadingmanagers.ConversionInfo;
 import bot.fileloadingmanagers.FileLoadingManager;
-import bot.fileloadingmanagers.LoadingInfo;
 import bot.fileloadingmanagers.TelegramFileLoadingManager;
 import convertations.conversions.AvailableConversions;
 import convertations.conversions.Conversion;
@@ -11,7 +10,10 @@ import convertations.factory.AbstractConverterFactory;
 import convertations.factory.ConverterFactory;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.GetFile;
-import org.telegram.telegrambots.meta.api.objects.*;
+import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
+import org.telegram.telegrambots.meta.api.objects.Document;
+import org.telegram.telegrambots.meta.api.objects.Message;
+import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
@@ -20,7 +22,6 @@ import tools.files.FileNameTools;
 
 import java.io.File;
 import java.io.IOException;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -28,7 +29,7 @@ import java.util.Map;
 
 public class ConvertScript extends AbstractScript {
     private final AbstractConverterFactory factory = new ConverterFactory();
-    private final FileLoadingManager<ConversionInfo, LoadingInfo> loadingManager = new TelegramFileLoadingManager();
+    private final FileLoadingManager<ConversionInfo, String> loadingManager = new TelegramFileLoadingManager();
     private final Map<String, State> chatStates = new HashMap<>();
 
     public ConvertScript(TelegramLongPollingBot bot) {
@@ -90,22 +91,12 @@ public class ConvertScript extends AbstractScript {
                         String extension = FileNameTools.extractExtension(document.getFileName()).toLowerCase();
                         Conversion conversion = state.getConversion();
                         if (extension.equals(conversion.getFrom().name().toLowerCase())) {
-                            ConversionInfo conversionInfo = new ConversionInfo(document.getFileUniqueId(), conversion);
-                            if (loadingManager.contains(conversionInfo) &&
-                                    loadingManager.get(conversionInfo).getLoadingIdExpired().isAfter(LocalDateTime.now())) {
-                                sendDocumentReply(chatId, loadingManager.get(conversionInfo).getLoadingId());
-                            } else {
-                                File inputFile = downloadDocument(document);
-                                Converter converter = factory.getConverter(conversion);
-                                File outputFile = converter.convert(inputFile);
-                                Document uploadedDocument = sendDocumentReply(chatId, outputFile,
-                                        FileNameTools.extractFilenameWithoutExtension(document.getFileName()) +
-                                                "." + conversion.getTo().name().toLowerCase());
-                                inputFile.delete();
-                                outputFile.delete();
-                                LoadingInfo updatedLoadingInfo = new LoadingInfo(uploadedDocument.getFileId(),
-                                        LocalDateTime.now().plusHours(1));
-                                loadingManager.put(new ConversionInfo(document.getFileUniqueId(), conversion), updatedLoadingInfo);
+                            ConversionInfo info = new ConversionInfo(document.getFileUniqueId(), conversion);
+                            if (!(loadingManager.contains(info) && sendDocumentReply(chatId, loadingManager.get(info)) != null)) {
+                                Document uploadedDocument = convertAndSendDocument(chatId, document, conversion);
+                                if (uploadedDocument != null) {
+                                    saveDocumentInLoadingManager(uploadedDocument, info);
+                                }
                             }
                         } else {
                             sendTextReply(chatId, "Wrong file extension");
@@ -117,6 +108,19 @@ public class ConvertScript extends AbstractScript {
                 }
             }
         }
+    }
+
+    private Document convertAndSendDocument(String chatId, Document document, Conversion conversion) {
+        File inputFile = downloadDocument(document);
+        Converter converter = factory.getConverter(conversion);
+        File outputFile = converter.convert(inputFile);
+        return sendDocumentReply(chatId, outputFile,
+                FileNameTools.extractFilenameWithoutExtension(document.getFileName()) +
+                        "." + conversion.getTo().name().toLowerCase());
+    }
+
+    private void saveDocumentInLoadingManager(Document document, ConversionInfo conversionInfo) {
+        loadingManager.put(conversionInfo, document.getFileId());
     }
 
     private File downloadDocument(Document document) {
