@@ -121,9 +121,12 @@ public class ConvertScript extends AbstractScript {
         File inputFile = downloadDocument(document);
         Converter converter = factory.getConverter(conversion);
         File outputFile = converter.convert(inputFile);
-        return sendDocumentReply(chatId, outputFile,
-                FileNameTools.extractFilenameWithoutExtension(document.getFileName()) +
-                        "." + conversion.getTo().name().toLowerCase());
+        Document uploadedDocument = sendDocumentReply(chatId, outputFile,
+                FileNameTools.extractFilenameWithoutExtension(
+                        document.getFileName()) + "." + conversion.getTo().name().toLowerCase());
+        inputFile.delete();
+        outputFile.delete();
+        return uploadedDocument;
     }
 
     private File downloadDocument(Document document) {
