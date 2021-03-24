@@ -91,15 +91,21 @@ public class ConvertScript extends AbstractScript {
                         Conversion conversion = state.getConversion();
                         if (extension.equals(conversion.getFrom().name().toLowerCase())) {
                             ConversionInfo conversionInfo = new ConversionInfo(document.getFileUniqueId(), conversion);
-                            if (loadingManager.contains(conversionInfo)) {
-                                LoadingInfo loadingInfo = loadingManager.get(conversionInfo);
-                                if (loadingInfo.getLoadingIdExpired().isBefore(LocalDateTime.now())) {
-                                    convertFileThenLoadAndUpdateLoadingInfo(chatId, document, conversion);
-                                } else {
-                                    sendDocumentReply(chatId, loadingInfo.getLoadingId());
-                                }
+                            if (loadingManager.contains(conversionInfo) &&
+                                    loadingManager.get(conversionInfo).getLoadingIdExpired().isAfter(LocalDateTime.now())) {
+                                sendDocumentReply(chatId, loadingManager.get(conversionInfo).getLoadingId());
                             } else {
-                                convertFileThenLoadAndUpdateLoadingInfo(chatId, document, conversion);
+                                File inputFile = downloadDocument(document);
+                                Converter converter = factory.getConverter(conversion);
+                                File outputFile = converter.convert(inputFile);
+                                Document uploadedDocument = sendDocumentReply(chatId, outputFile,
+                                        FileNameTools.extractFilenameWithoutExtension(document.getFileName()) +
+                                                "." + conversion.getTo().name().toLowerCase());
+                                inputFile.delete();
+                                outputFile.delete();
+                                LoadingInfo updatedLoadingInfo = new LoadingInfo(uploadedDocument.getFileId(),
+                                        LocalDateTime.now().plusHours(1));
+                                loadingManager.put(new ConversionInfo(document.getFileUniqueId(), conversion), updatedLoadingInfo);
                             }
                         } else {
                             sendTextReply(chatId, "Wrong file extension");
@@ -111,20 +117,6 @@ public class ConvertScript extends AbstractScript {
                 }
             }
         }
-    }
-
-    private void convertFileThenLoadAndUpdateLoadingInfo(String chatId, Document document, Conversion conversion) {
-        File inputFile = downloadDocument(document);
-        Converter converter = factory.getConverter(conversion);
-        File outputFile = converter.convert(inputFile);
-        Document uploadedDocument = sendDocumentReply(chatId, outputFile,
-                FileNameTools.extractFilenameWithoutExtension(document.getFileName()) +
-                        "." + conversion.getTo().name().toLowerCase());
-        inputFile.delete();
-        outputFile.delete();
-        LoadingInfo updatedLoadingInfo = new LoadingInfo(uploadedDocument.getFileId(),
-                LocalDateTime.now().plusHours(1));
-        loadingManager.put(new ConversionInfo(document.getFileUniqueId(), conversion), updatedLoadingInfo);
     }
 
     private File downloadDocument(Document document) {
