@@ -104,17 +104,34 @@ public class ConvertScript extends AbstractScript {
                             sendTextReply(chatId, "Wrong file extension");
                         }
 
-                    } else if (message.hasPhoto()) {
-                        List<PhotoSize> photos = message.getPhoto();
-                        // conversion and sending
-
                     } else {
                         sendTextReply(chatId, "Document required");
+                    }
+
+
+                    if (message.hasPhoto()) {
+                        List<PhotoSize> photos = message.getPhoto();
+                        Conversion conversion = state.getConversion();
+                        ConversionInfo info = new ConversionInfo(combinePhotoIds(photos), conversion);
+                        if (!(loadingManager.contains(info) && sendDocumentReply(chatId, loadingManager.get(info)) != null)) {
+                            Document uploadedDocument = convertAndSendImages(chatId, photos, conversion);
+                            if (uploadedDocument != null) {
+                                saveDocumentInLoadingManager(uploadedDocument, info);
+                            }
+                        }
+                    } else {
+                        sendTextReply(chatId, "Photos required");
                     }
                     stop(chatId);
                 }
             }
         }
+    }
+
+    private String combinePhotoIds(List<PhotoSize> photos) {
+        StringBuilder result = new StringBuilder();
+        photos.forEach(p -> result.append(p.getFileUniqueId()).append(";"));
+        return result.toString();
     }
 
     private Document convertAndSendDocument(String chatId, Document document, Conversion conversion) {
@@ -141,7 +158,7 @@ public class ConvertScript extends AbstractScript {
         } catch (TelegramApiException exc) {
             throw new IllegalStateException(exc);
         } catch (IOException exc) {
-            throw new IllegalStateException("Can't create temporary file for " + fileName);
+            throw new IllegalStateException("Unable to create temporary file for " + fileName);
         }
     }
 
@@ -150,45 +167,30 @@ public class ConvertScript extends AbstractScript {
     }
 
     private Document convertAndSendImages(String chatId, List<PhotoSize> photos, Conversion conversion) {
-        File inputFile = zipPhotos(photos.stream().map(this::downloadPhoto).collect(Collectors.toList()));
+        File inputDir = downloadPhotos(photos);
         Converter converter = factory.getConverter(conversion);
-        File outputFile = converter.convert(inputFile);
+        File outputFile = converter.convert(inputDir);
         return sendDocumentReply(chatId, outputFile, "images." + conversion.getTo().name().toLowerCase());
     }
 
-    private File downloadPhoto(PhotoSize photo) {
-        String fileName = photo.getFileUniqueId();
-        GetFile getFile = new GetFile(photo.getFileId());
+    private File downloadPhotos(List<PhotoSize> photos) {
         try {
-            File outputFile = File.createTempFile(fileName, ".jpg");
-            return bot.downloadFile(bot.execute(getFile), outputFile);
+            File tempDir = Files.createTempDirectory("images").toFile();
+            for (PhotoSize photo : photos) {
+                String fileName = photo.getFileUniqueId();
+                GetFile getFile = new GetFile(photo.getFileId());
+                File outputFile = File.createTempFile(fileName, ".jpg", tempDir);
+                bot.downloadFile(bot.execute(getFile), outputFile);
+            }
+            tempDir.deleteOnExit();
+            return tempDir;
         } catch (TelegramApiException exc) {
             throw new IllegalStateException(exc);
         } catch (IOException exc) {
-            throw new IllegalStateException("Can't create temporary file for " + fileName + ".jpg");
+            throw new IllegalStateException("Unable to create temporary file or directory");
         }
     }
 
-    private File zipPhotos(List<File> photos) {
-        if (photos.size() == 0) {
-            return null;
-        }
-        try {
-            File outputFile = File.createTempFile("images", ".zip");
-            try (ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(outputFile))) {
-                for (File photo : photos) {
-                    zos.putNextEntry(new ZipEntry(photo.getName()));
-                    Files.copy(photo.toPath(), zos);
-                    zos.closeEntry();
-                    photo.delete();
-                }
-            }
-            outputFile.deleteOnExit();
-            return outputFile;
-        } catch (IOException exc) {
-            throw new IllegalStateException("Can't create temporary file.");
-        }
-    }
 
     @Override
     public void stop(String chatId) {

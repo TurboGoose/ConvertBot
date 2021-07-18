@@ -18,7 +18,7 @@ public class PdfToTxtConverter implements Converter {
             saveTextInFile(text, txtFile);
             return txtFile;
         } catch (IOException exc) {
-            throw new IllegalStateException(exc);
+            throw new RuntimeException(exc);
         }
     }
 

@@ -15,7 +15,7 @@ public class TxtToPdfConverter implements Converter {
             writeTxtToPdf(file, pdfFile);
             return pdfFile;
         } catch (IOException | DocumentException exc) {
-            throw new IllegalStateException(exc);
+            throw new RuntimeException(exc);
         }
     }
 
