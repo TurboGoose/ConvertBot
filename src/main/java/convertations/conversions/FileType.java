@@ -1,5 +1,5 @@
 package convertations.conversions;
 
 public enum FileType {
-    TXT, PDF
+    TXT, PDF, JPG
 }
