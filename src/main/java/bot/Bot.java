@@ -1,9 +1,11 @@
 package bot;
 
-import bot.handlers.commands.ConvertCommand;
+import bot.handlers.commands.ConvertDocCommand;
+import bot.handlers.commands.ConvertImgCommand;
 import bot.handlers.commands.HelpCommand;
 import bot.handlers.commands.StartCommand;
-import bot.handlers.scripts.ConvertScript;
+import bot.handlers.scripts.ConvertDocScript;
+import bot.handlers.scripts.ConvertImgScript;
 import bot.handlers.scripts.Script;
 import org.telegram.telegrambots.extensions.bots.commandbot.TelegramLongPollingCommandBot;
 import org.telegram.telegrambots.meta.api.objects.Update;
@@ -23,9 +25,14 @@ public class Bot extends TelegramLongPollingCommandBot {
         readBotProperties();
         register(new StartCommand("start", "Start bot"));
         register(new HelpCommand("help", "Request help"));
-        Script convertScript = new ConvertScript(this);
-        register(new ConvertCommand("convert", "Convert files", convertScript));
-        scripts.add(convertScript);
+
+        Script convertDocScript = new ConvertDocScript(this);
+        register(new ConvertDocCommand("convert_doc", "Convert documents", convertDocScript));
+        scripts.add(convertDocScript);
+
+        Script convertImgScript = new ConvertImgScript(this);
+        register(new ConvertImgCommand("convert_img", "Convert multiple images", convertImgScript));
+        scripts.add(convertImgScript);
     }
 
     private void readBotProperties() {

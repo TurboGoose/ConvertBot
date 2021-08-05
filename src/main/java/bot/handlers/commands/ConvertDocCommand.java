@@ -5,10 +5,10 @@ import org.telegram.telegrambots.meta.api.objects.Chat;
 import org.telegram.telegrambots.meta.api.objects.User;
 import org.telegram.telegrambots.meta.bots.AbsSender;
 
-public class ConvertCommand extends AbstractCommand {
+public class ConvertDocCommand extends AbstractCommand {
     private final Script script;
 
-    public ConvertCommand(String command, String description, Script script) {
+    public ConvertDocCommand(String command, String description, Script script) {
         super(command, description);
         this.script = script;
     }

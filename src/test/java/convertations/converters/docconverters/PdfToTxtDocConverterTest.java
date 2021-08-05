@@ -1,4 +1,4 @@
-package convertations.converters;
+package convertations.converters.docconverters;
 
 import org.junit.jupiter.api.Test;
 
@@ -11,8 +11,8 @@ import java.util.stream.Collectors;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-class PdfToTxtConverterTest {
-    Converter converter = new PdfToTxtConverter();
+class PdfToTxtDocConverterTest {
+    DocConverter converter = new PdfToTxtDocConverter();
 
     @Test
     public void convertBlankPdfToTxtFile() throws Exception {

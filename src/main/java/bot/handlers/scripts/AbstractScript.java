@@ -41,11 +41,17 @@ public abstract class AbstractScript implements Script {
         return executeSendingDocument(new SendDocument(chatId, new InputFile(fileId)));
     }
 
-    public Document sendDocumentReply(String chatId, File file, String filename) {
-        return executeSendingDocument(new SendDocument(chatId, new InputFile(file, filename)));
+    public Document sendDocumentReply(String chatId, File file, String filename, ReplyKeyboard replyKeyboard) {
+        SendDocument sendDocument = new SendDocument(chatId, new InputFile(file, filename));
+        sendDocument.setReplyMarkup(replyKeyboard);
+        return executeSendingDocument(sendDocument);
     }
 
-    private Document executeSendingDocument(SendDocument sendDocument) {
+    public Document sendDocumentReply(String chatId, File file, String filename) {
+        return sendDocumentReply(chatId, file, filename, null);
+    }
+
+        private Document executeSendingDocument(SendDocument sendDocument) {
         try {
             return bot.execute(sendDocument).getDocument();
         } catch (TelegramApiException e) {

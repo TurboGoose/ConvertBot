@@ -1,4 +1,4 @@
-package convertations.converters;
+package convertations.converters.docconverters;
 
 import com.itextpdf.text.pdf.PdfReader;
 import com.itextpdf.text.pdf.parser.PdfTextExtractor;
@@ -8,7 +8,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 
-public class PdfToTxtConverter implements Converter {
+public class PdfToTxtDocConverter implements DocConverter {
     @Override
     public File convert(File file) {
         checkExtension(file);
