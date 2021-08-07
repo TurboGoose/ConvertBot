@@ -25,7 +25,7 @@ import static bot.handlers.scripts.helperclasses.ReplyKeyboards.availableConvers
 public class ConvertDocScript extends AbstractScript {
     private final AbstractDocConverterFactory factory = new DocConverterFactory();
     private final FileLoadingManager<ConversionInfo, String> loadingManager = new TelegramFileLoadingManager();
-    private final Map<String, State> chatStates = new HashMap<>();
+    private final Map<String, ChatStateDoc> chatStates = new HashMap<>();
 
     public ConvertDocScript(TelegramLongPollingBot bot) {
         super(bot);
@@ -33,7 +33,7 @@ public class ConvertDocScript extends AbstractScript {
 
     @Override
     public void start(String chatId) {
-        chatStates.putIfAbsent(chatId, new State());
+        chatStates.putIfAbsent(chatId, new ChatStateDoc());
         chatStates.get(chatId).setChoosingConversion();
         sendTextReply(chatId, "What type of conversion do you want to do?",
                 availableConversions(AvailableConversions.getDocConversions()));
@@ -46,18 +46,19 @@ public class ConvertDocScript extends AbstractScript {
             String chatId = callbackQuery.getMessage().getChatId().toString();
             answerCallbackQuery(callbackQuery);
             if (chatStates.containsKey(chatId)) {
-                State state = chatStates.get(chatId);
+                ChatStateDoc state = chatStates.get(chatId);
                 if (state.isChoosingConversion()) {
                     Conversion chosenConversion = Conversion.parse(callbackQuery.getData());
                     sendTextReply(chatId, "Load your " + chosenConversion.getFrom().toString() + " file");
-                    state.setLoadingFile(chosenConversion);
+                    state.setConversion(chosenConversion);
+                    state.setLoadingFile();
                 }
             }
         } else if (update.hasMessage()) {
             Message message = update.getMessage();
             String chatId = message.getChatId().toString();
             if (chatStates.containsKey(chatId)) {
-                State state = chatStates.get(chatId);
+                ChatStateDoc state = chatStates.get(chatId);
                 if (state.isLoadingFile()) {
                     if (message.hasDocument()) {
                         Document document = message.getDocument();
@@ -115,44 +116,50 @@ public class ConvertDocScript extends AbstractScript {
         loadingManager.put(conversionInfo, document.getFileId());
     }
 
-
     @Override
     public void stop(String chatId) {
         if (chatStates.containsKey(chatId)) {
-            chatStates.get(chatId).setStop();
+            ChatStateDoc state = chatStates.get(chatId);
+            state.setCompleted();
+            state.reset();
         }
     }
 
-    private static class State {
-        private enum DialogStage {CHOOSING_CONVERSION, LOADING_FILE, NONE}
+    static class ChatStateDoc {
+        private enum Stage {CHOOSING_CONVERSION, LOADING_FILE, COMPLETED}
 
-        private DialogStage currentDialogStage = DialogStage.NONE;
-        private Conversion conversion = null;
+        private Stage stage;
+        private Conversion conversion;
 
-        Conversion getConversion() {
+        public boolean isChoosingConversion() {
+            return stage == Stage.CHOOSING_CONVERSION;
+        }
+
+        public void setChoosingConversion() {
+            stage = Stage.CHOOSING_CONVERSION;
+        }
+
+        public boolean isLoadingFile() {
+            return stage == Stage.LOADING_FILE;
+        }
+
+        public void setLoadingFile() {
+            stage = Stage.LOADING_FILE;
+        }
+
+        public void setCompleted() {
+            stage = Stage.COMPLETED;
+        }
+
+        public Conversion getConversion() {
             return conversion;
         }
 
-        void setChoosingConversion() {
-            currentDialogStage = DialogStage.CHOOSING_CONVERSION;
-            conversion = null;
-        }
-
-        boolean isChoosingConversion() {
-            return currentDialogStage == DialogStage.CHOOSING_CONVERSION;
-        }
-
-        void setLoadingFile(Conversion conversion) {
+        public void setConversion(Conversion conversion) {
             this.conversion = conversion;
-            currentDialogStage = DialogStage.LOADING_FILE;
         }
 
-        boolean isLoadingFile() {
-            return currentDialogStage == DialogStage.LOADING_FILE;
-        }
-
-        void setStop() {
-            currentDialogStage = DialogStage.NONE;
+        public void reset() {
             conversion = null;
         }
     }

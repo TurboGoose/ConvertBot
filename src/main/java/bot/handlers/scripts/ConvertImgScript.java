@@ -26,7 +26,7 @@ import java.util.Map;
 public class ConvertImgScript extends AbstractScript {
     private final AbstractImgConverterFactory factory = new ImgConverterFactory();
     private final FileLoadingManager<ConversionInfo, String> loadingManager = new TelegramFileLoadingManager();
-    private final Map<String, ChatState> chatStates = new HashMap<>();
+    private final Map<String, ChatStateImg> chatStates = new HashMap<>();
 
     public ConvertImgScript(TelegramLongPollingBot bot) {
         super(bot);
@@ -34,7 +34,7 @@ public class ConvertImgScript extends AbstractScript {
 
     @Override
     public void start(String chatId) {
-        chatStates.putIfAbsent(chatId, new ChatState());
+        chatStates.putIfAbsent(chatId, new ChatStateImg());
         chatStates.get(chatId).setChoosingConversion();
         sendTextReply(chatId, "What type of conversion do you want to do?",
                 ReplyKeyboards.availableConversions(AvailableConversions.getImgConversions()));
@@ -49,7 +49,7 @@ public class ConvertImgScript extends AbstractScript {
             String chatId = callbackQuery.getMessage().getChatId().toString();
             answerCallbackQuery(callbackQuery);
             if (chatStates.containsKey(chatId)) {
-                ChatState state = chatStates.get(chatId);
+                ChatStateImg state = chatStates.get(chatId);
                 if (state.isChoosingConversion()) {
                     Conversion chosenConversion = Conversion.parse(callbackQuery.getData());
                     sendTextReply(chatId, "Load your " + chosenConversion.getFrom().toString() + " files",
@@ -62,7 +62,7 @@ public class ConvertImgScript extends AbstractScript {
             Message message = update.getMessage();
             String chatId = message.getChatId().toString();
             if (chatStates.containsKey(chatId)) {
-                ChatState state = chatStates.get(chatId);
+                ChatStateImg state = chatStates.get(chatId);
                 Conversion conversion = state.getConversion();
                 if (state.isLoadingFile()) {
 
@@ -146,7 +146,7 @@ public class ConvertImgScript extends AbstractScript {
         loadingManager.put(conversionInfo, document.getFileId());
     }
 
-    private void addDocumentWithFailMessage(ChatState state, Document document, String chatId) {
+    private void addDocumentWithFailMessage(ChatStateImg state, Document document, String chatId) {
         if (!state.addDocument(document)) {
             sendTextReply(chatId, String.format("You have already loaded maximum number of photos (%d)",
                     state.getImageBuffer().getCapacity()));
@@ -167,47 +167,15 @@ public class ConvertImgScript extends AbstractScript {
     @Override
     public void stop(String chatId) {
         if (chatStates.containsKey(chatId)) {
-            ChatState state = chatStates.get(chatId);
+            ChatStateImg state = chatStates.get(chatId);
             state.setCompleted();
             state.reset();
         }
     }
 
+    static class ChatStateImg extends ConvertDocScript.ChatStateDoc {
 
-    private static class ChatState {
-        private enum Stage {CHOOSING_CONVERSION, LOADING_FILE, COMPLETED}
-
-        private Stage stage;
-        private Conversion conversion;
         private final ImageBuffer imageBuffer = new ImageBuffer();
-
-        public boolean isChoosingConversion() {
-            return stage == Stage.CHOOSING_CONVERSION;
-        }
-
-        public void setChoosingConversion() {
-            stage = Stage.CHOOSING_CONVERSION;
-        }
-
-        public boolean isLoadingFile() {
-            return stage == Stage.LOADING_FILE;
-        }
-
-        public void setLoadingFile() {
-            stage = Stage.LOADING_FILE;
-        }
-
-        public void setCompleted() {
-            stage = Stage.COMPLETED;
-        }
-
-        public Conversion getConversion() {
-            return conversion;
-        }
-
-        public void setConversion(Conversion conversion) {
-            this.conversion = conversion;
-        }
 
         public boolean addDocument(Document document) {
             return imageBuffer.add(document);
@@ -217,8 +185,8 @@ public class ConvertImgScript extends AbstractScript {
             return imageBuffer;
         }
 
-        void reset() {
-            conversion = null;
+        public void reset() {
+            super.reset();
             imageBuffer.clear();
         }
     }
