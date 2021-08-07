@@ -3,6 +3,9 @@ package bot.handlers.scripts;
 import bot.fileloadingmanagers.ConversionInfo;
 import bot.fileloadingmanagers.FileLoadingManager;
 import bot.fileloadingmanagers.TelegramFileLoadingManager;
+import bot.handlers.scripts.helperclasses.DataDownloader;
+import bot.handlers.scripts.helperclasses.ImageBuffer;
+import bot.handlers.scripts.helperclasses.ReplyKeyboards;
 import convertations.conversions.AvailableConversions;
 import convertations.conversions.Conversion;
 import convertations.converters.imgconverters.ImgConverter;
@@ -69,10 +72,13 @@ public class ConvertImgScript extends AbstractScript {
                                 sendTextReply(chatId, "You have to load at least one photo",
                                         new ReplyKeyboardRemove(true));
                             } else {
-                                List<File> downloadedImages = downloadImages(state.getImageBuffer());
-                                File convertedImages = convertImages(downloadedImages, conversion);
-                                Document uploadedDocument = sendConvertedDocument(chatId, convertedImages);
-                                //adding to file manager...
+                                ConversionInfo info = new ConversionInfo(combineIds(state.getImageBuffer()), conversion);
+                                if (!(loadingManager.contains(info) && sendDocumentReply(chatId, loadingManager.get(info)) != null)) {
+                                    Document uploadedDocument = sendConvertedDocument(chatId, convertImages(downloadImages(state.getImageBuffer()), conversion));
+                                    if (uploadedDocument != null) {
+                                        saveDocumentInLoadingManager(uploadedDocument, info);
+                                    }
+                                }
                             }
                             stop(chatId);
                         }
@@ -87,7 +93,7 @@ public class ConvertImgScript extends AbstractScript {
                                                 state.getImageBuffer().getCapacity()));
                             }
                         } else {
-                            sendTextReply(chatId, "Wrong file extension");
+                            sendTextReply(chatId, "Wrong file extension", new ReplyKeyboardRemove(true));
                             stop(chatId);
                         }
 
@@ -98,12 +104,12 @@ public class ConvertImgScript extends AbstractScript {
                             if (!state.addDocument(img)) {
                                 sendTextReply(chatId,
                                         String.format("You have already loaded maximum number of photos (%d)",
-                                                state.getImageBuffer().getCapacity()));
+                                                state.getImageBuffer().getCapacity()), new ReplyKeyboardRemove(true));
                             }
                         }
 
                     } else {
-                        sendTextReply(chatId, "Document or photo required");
+                        sendTextReply(chatId, "Document or photo required", new ReplyKeyboardRemove(true));
                         stop(chatId);
                     }
                 }
@@ -111,9 +117,9 @@ public class ConvertImgScript extends AbstractScript {
         }
     }
 
-    private String combineIds(List<Document> photos) {
+    private String combineIds(Iterable<Document> images) {
         StringBuilder result = new StringBuilder();
-        photos.forEach(p -> result.append(p.getFileUniqueId()).append(";"));
+        images.forEach(p -> result.append(p.getFileUniqueId()).append(";"));
         return result.toString();
     }
 
@@ -122,14 +128,13 @@ public class ConvertImgScript extends AbstractScript {
         Document uploadedDocument = sendDocumentReply(chatId, file,
                 "images" + filename.substring(filename.lastIndexOf('.')),
                 new ReplyKeyboardRemove(true));
-        // file.delete();
+        file.delete();
         return uploadedDocument;
     }
 
     private File convertImages(List<File> inputFiles, Conversion conversion) {
         ImgConverter converter = factory.getConverter(conversion);
         File outputFile = converter.convert(inputFiles);
-        //adding file to loading manager
         inputFiles.forEach(File::delete);
         return outputFile;
     }
@@ -152,6 +157,10 @@ public class ConvertImgScript extends AbstractScript {
         doc.setMimeType("image/jpeg");
         doc.setFileSize(photoSize.getFileSize());
         return doc;
+    }
+
+    private void saveDocumentInLoadingManager(Document document, ConversionInfo conversionInfo) {
+        loadingManager.put(conversionInfo, document.getFileId());
     }
 
     @Override
@@ -187,7 +196,7 @@ public class ConvertImgScript extends AbstractScript {
             this.chosenConversion = chosenConversion;
         }
 
-        boolean addDocument(Document document) {
+        public boolean addDocument(Document document) {
             return imageBuffer.add(document);
         }
 

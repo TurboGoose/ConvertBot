@@ -3,6 +3,7 @@ package bot.handlers.scripts;
 import bot.fileloadingmanagers.ConversionInfo;
 import bot.fileloadingmanagers.FileLoadingManager;
 import bot.fileloadingmanagers.TelegramFileLoadingManager;
+import bot.handlers.scripts.helperclasses.DataDownloader;
 import convertations.conversions.AvailableConversions;
 import convertations.conversions.Conversion;
 import convertations.converters.docconverters.DocConverter;
@@ -19,7 +20,7 @@ import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
-import static bot.handlers.scripts.ReplyKeyboards.availableConversions;
+import static bot.handlers.scripts.helperclasses.ReplyKeyboards.availableConversions;
 
 public class ConvertDocScript extends AbstractScript {
     private final AbstractDocConverterFactory factory = new DocConverterFactory();
@@ -60,14 +61,15 @@ public class ConvertDocScript extends AbstractScript {
                 if (state.isLoadingFile()) {
                     if (message.hasDocument()) {
                         Document document = message.getDocument();
-                        String extension = FileNameTools.extractExtension(document.getFileName()).toLowerCase();
                         Conversion conversion = state.getConversion();
-                        if (extension.equals(conversion.getFrom().name().toLowerCase())) {
+                        if (isSameExtensions(document, conversion)) {
                             ConversionInfo info = new ConversionInfo(document.getFileUniqueId(), conversion);
                             if (!(loadingManager.contains(info) && sendDocumentReply(chatId, loadingManager.get(info)) != null)) {
-                                Document uploadedDocument = convertAndSendDocument(chatId, document, conversion);
+                                Document uploadedDocument = sendFile(chatId,
+                                        convertFile(downloadDocument(document), conversion),
+                                        composeNewFilename(document, conversion));
                                 if (uploadedDocument != null) {
-                                    saveDocumentInLoadingManager(uploadedDocument, info);
+                                    saveInLoadingManager(uploadedDocument, info);
                                 }
                             }
                         } else {
@@ -82,19 +84,34 @@ public class ConvertDocScript extends AbstractScript {
         }
     }
 
-    private Document convertAndSendDocument(String chatId, Document document, Conversion conversion) {
-        File inputFile = new DataDownloader(bot).downloadDocument(document);
+    private boolean isSameExtensions(Document document, Conversion conversion) {
+        String extension = FileNameTools.extractExtension(document.getFileName()).toLowerCase();
+        return extension.equals(conversion.getFrom().name().toLowerCase());
+    }
+
+    private File downloadDocument(Document document) {
+        return new DataDownloader(bot).downloadDocument(document);
+    }
+
+    private File convertFile(File file, Conversion conversion) {
         DocConverter converter = factory.getConverter(conversion);
-        File outputFile = converter.convert(inputFile);
-        Document uploadedDocument = sendDocumentReply(chatId, outputFile,
-                FileNameTools.extractFilenameWithoutExtension(
-                        document.getFileName()) + "." + conversion.getTo().name().toLowerCase());
-        inputFile.delete();
-        outputFile.delete();
+        File result = converter.convert(file);
+        file.delete();
+        return result;
+    }
+
+    private Document sendFile(String chatId, File file, String newFilename) {
+        Document uploadedDocument = sendDocumentReply(chatId, file, newFilename);
+        file.delete();
         return uploadedDocument;
     }
 
-    private void saveDocumentInLoadingManager(Document document, ConversionInfo conversionInfo) {
+    private String composeNewFilename(Document document, Conversion conversion) {
+        return FileNameTools.extractFilenameWithoutExtension(document.getFileName()) +
+                "." + conversion.getTo().name().toLowerCase();
+    }
+
+    private void saveInLoadingManager(Document document, ConversionInfo conversionInfo) {
         loadingManager.put(conversionInfo, document.getFileId());
     }
 
@@ -109,7 +126,6 @@ public class ConvertDocScript extends AbstractScript {
     private static class State {
         private enum DialogStage {CHOOSING_CONVERSION, LOADING_FILE, NONE}
 
-        private boolean running = false;
         private DialogStage currentDialogStage = DialogStage.NONE;
         private Conversion conversion = null;
 
@@ -118,27 +134,24 @@ public class ConvertDocScript extends AbstractScript {
         }
 
         void setChoosingConversion() {
-            running = true;
             currentDialogStage = DialogStage.CHOOSING_CONVERSION;
             conversion = null;
         }
 
         boolean isChoosingConversion() {
-            return running && currentDialogStage == DialogStage.CHOOSING_CONVERSION;
+            return currentDialogStage == DialogStage.CHOOSING_CONVERSION;
         }
 
         void setLoadingFile(Conversion conversion) {
-            running = true;
             this.conversion = conversion;
             currentDialogStage = DialogStage.LOADING_FILE;
         }
 
         boolean isLoadingFile() {
-            return running && currentDialogStage == DialogStage.LOADING_FILE;
+            return currentDialogStage == DialogStage.LOADING_FILE;
         }
 
         void setStop() {
-            running = false;
             currentDialogStage = DialogStage.NONE;
             conversion = null;
         }

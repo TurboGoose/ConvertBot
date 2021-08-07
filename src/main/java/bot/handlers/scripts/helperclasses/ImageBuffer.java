@@ -1,7 +1,8 @@
-package bot.handlers.scripts;
+package bot.handlers.scripts.helperclasses;
 
 import org.telegram.telegrambots.meta.api.objects.Document;
 
+import javax.validation.constraints.NotNull;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -42,5 +43,4 @@ public class ImageBuffer implements Iterable<Document> {
     public void clear() {
         images.clear();
     }
-
 }

@@ -1,4 +1,4 @@
-package bot.handlers.scripts;
+package bot.handlers.scripts.helperclasses;
 
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.GetFile;

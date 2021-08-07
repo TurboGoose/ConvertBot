@@ -1,4 +1,4 @@
-package bot.handlers.scripts;
+package bot.handlers.scripts.helperclasses;
 
 import convertations.conversions.Conversion;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
@@ -38,9 +38,7 @@ public class ReplyKeyboards {
     }
 
     public static ReplyKeyboard getButtonWithText(String text) {
-        ReplyKeyboardMarkup keyboard = new ReplyKeyboardMarkup(
+        return new ReplyKeyboardMarkup(
                 List.of(new KeyboardRow(List.of(new KeyboardButton(text)))));
-        //keyboard.setOneTimeKeyboard(true);
-        return keyboard;
     }
 }
