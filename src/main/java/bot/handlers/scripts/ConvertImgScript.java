@@ -35,7 +35,7 @@ public class ConvertImgScript extends AbstractScript {
     @Override
     public void start(String chatId) {
         chatStates.putIfAbsent(chatId, new ChatState());
-        chatStates.get(chatId).setStage(ChatState.Stage.CHOOSING_CONVERSION);
+        chatStates.get(chatId).setChoosingConversion();
         sendTextReply(chatId, "What type of conversion do you want to do?",
                 ReplyKeyboards.availableConversions(AvailableConversions.getImgConversions()));
     }
@@ -50,12 +50,12 @@ public class ConvertImgScript extends AbstractScript {
             answerCallbackQuery(callbackQuery);
             if (chatStates.containsKey(chatId)) {
                 ChatState state = chatStates.get(chatId);
-                if (state.getStage() == ChatState.Stage.CHOOSING_CONVERSION) {
+                if (state.isChoosingConversion()) {
                     Conversion chosenConversion = Conversion.parse(callbackQuery.getData());
                     sendTextReply(chatId, "Load your " + chosenConversion.getFrom().toString() + " files",
                             ReplyKeyboards.getButtonWithText(STOP_WORD));
-                    state.setChosenConversion(chosenConversion);
-                    state.setStage(ChatState.Stage.LOADING_FILE);
+                    state.setConversion(chosenConversion);
+                    state.setLoadingFile();
                 }
             }
         } else if (update.hasMessage()) {
@@ -63,18 +63,17 @@ public class ConvertImgScript extends AbstractScript {
             String chatId = message.getChatId().toString();
             if (chatStates.containsKey(chatId)) {
                 ChatState state = chatStates.get(chatId);
-                Conversion conversion = state.getChosenConversion();
-                if (state.getStage() == ChatState.Stage.LOADING_FILE) {
+                Conversion conversion = state.getConversion();
+                if (state.isLoadingFile()) {
 
                     if (message.hasText()) {
                         if (STOP_WORD.equals(message.getText())) {
                             if (state.getImageBuffer().size() == 0) {
-                                sendTextReply(chatId, "You have to load at least one photo",
-                                        new ReplyKeyboardRemove(true));
+                                sendTextReply(chatId, "You have to load at least one photo", new ReplyKeyboardRemove(true));
                             } else {
                                 ConversionInfo info = new ConversionInfo(combineIds(state.getImageBuffer()), conversion);
                                 if (!(loadingManager.contains(info) && sendDocumentReply(chatId, loadingManager.get(info)) != null)) {
-                                    Document uploadedDocument = sendConvertedDocument(chatId, convertImages(downloadImages(state.getImageBuffer()), conversion));
+                                    Document uploadedDocument = sendDocument(chatId, convertImages(downloadImages(state.getImageBuffer()), conversion));
                                     if (uploadedDocument != null) {
                                         saveDocumentInLoadingManager(uploadedDocument, info);
                                     }
@@ -85,13 +84,8 @@ public class ConvertImgScript extends AbstractScript {
 
                     } else if (message.hasDocument()) {
                         Document document = message.getDocument();
-                        String extension = FileNameTools.extractExtension(document.getFileName()).toLowerCase();
-                        if (extension.equals(conversion.getFrom().name().toLowerCase())) {
-                            if (!state.addDocument(document)) {
-                                sendTextReply(chatId,
-                                        String.format("You have already loaded maximum number of photos (%d)",
-                                                state.getImageBuffer().getCapacity()));
-                            }
+                        if (isSameExtensions(document, conversion)) {
+                            addDocumentWithFailMessage(state, document, chatId);
                         } else {
                             sendTextReply(chatId, "Wrong file extension", new ReplyKeyboardRemove(true));
                             stop(chatId);
@@ -100,12 +94,7 @@ public class ConvertImgScript extends AbstractScript {
                     } else if (message.hasPhoto()) {
                         List<PhotoSize> photos = message.getPhoto();
                         for (PhotoSize ps : photos.subList(1, photos.size())) {
-                            Document img = photoSizeToDocument(ps);
-                            if (!state.addDocument(img)) {
-                                sendTextReply(chatId,
-                                        String.format("You have already loaded maximum number of photos (%d)",
-                                                state.getImageBuffer().getCapacity()), new ReplyKeyboardRemove(true));
-                            }
+                            addDocumentWithFailMessage(state, photoSizeToDocument(ps), chatId);
                         }
 
                     } else {
@@ -123,13 +112,13 @@ public class ConvertImgScript extends AbstractScript {
         return result.toString();
     }
 
-    private Document sendConvertedDocument(String chatId, File file) {
-        String filename = file.getName();
-        Document uploadedDocument = sendDocumentReply(chatId, file,
-                "images" + filename.substring(filename.lastIndexOf('.')),
-                new ReplyKeyboardRemove(true));
-        file.delete();
-        return uploadedDocument;
+    private List<File> downloadImages(Iterable<Document> images) {
+        DataDownloader downloader = new DataDownloader(bot);
+        List<File> result = new LinkedList<>();
+        for (Document img : images) {
+            result.add(downloader.downloadDocument(img));
+        }
+        return result;
     }
 
     private File convertImages(List<File> inputFiles, Conversion conversion) {
@@ -139,13 +128,29 @@ public class ConvertImgScript extends AbstractScript {
         return outputFile;
     }
 
-    private List<File> downloadImages(Iterable<Document> images) {
-        DataDownloader downloader = new DataDownloader(bot);
-        List<File> result = new LinkedList<>();
-        for (Document img : images) {
-            result.add(downloader.downloadDocument(img));
+    private Document sendDocument(String chatId, File file) {
+        String filename = file.getName();
+        Document uploadedDocument = sendDocumentReply(chatId, file,
+                "images" + filename.substring(filename.lastIndexOf('.')),
+                new ReplyKeyboardRemove(true));
+        file.delete();
+        return uploadedDocument;
+    }
+
+    private boolean isSameExtensions(Document document, Conversion conversion) {
+        String extension = FileNameTools.extractExtension(document.getFileName()).toLowerCase();
+        return extension.equals(conversion.getFrom().name().toLowerCase());
+    }
+
+    private void saveDocumentInLoadingManager(Document document, ConversionInfo conversionInfo) {
+        loadingManager.put(conversionInfo, document.getFileId());
+    }
+
+    private void addDocumentWithFailMessage(ChatState state, Document document, String chatId) {
+        if (!state.addDocument(document)) {
+            sendTextReply(chatId, String.format("You have already loaded maximum number of photos (%d)",
+                    state.getImageBuffer().getCapacity()));
         }
-        return result;
     }
 
     private Document photoSizeToDocument(PhotoSize photoSize) {
@@ -159,15 +164,11 @@ public class ConvertImgScript extends AbstractScript {
         return doc;
     }
 
-    private void saveDocumentInLoadingManager(Document document, ConversionInfo conversionInfo) {
-        loadingManager.put(conversionInfo, document.getFileId());
-    }
-
     @Override
     public void stop(String chatId) {
         if (chatStates.containsKey(chatId)) {
             ChatState state = chatStates.get(chatId);
-            state.setStage(ChatState.Stage.COMPLETED);
+            state.setCompleted();
             state.reset();
         }
     }
@@ -177,23 +178,35 @@ public class ConvertImgScript extends AbstractScript {
         private enum Stage {CHOOSING_CONVERSION, LOADING_FILE, COMPLETED}
 
         private Stage stage;
-        private Conversion chosenConversion;
+        private Conversion conversion;
         private final ImageBuffer imageBuffer = new ImageBuffer();
 
-        public Stage getStage() {
-            return stage;
+        public boolean isChoosingConversion() {
+            return stage == Stage.CHOOSING_CONVERSION;
         }
 
-        public void setStage(Stage stage) {
-            this.stage = stage;
+        public void setChoosingConversion() {
+            stage = Stage.CHOOSING_CONVERSION;
         }
 
-        public Conversion getChosenConversion() {
-            return chosenConversion;
+        public boolean isLoadingFile() {
+            return stage == Stage.LOADING_FILE;
         }
 
-        public void setChosenConversion(Conversion chosenConversion) {
-            this.chosenConversion = chosenConversion;
+        public void setLoadingFile() {
+            stage = Stage.LOADING_FILE;
+        }
+
+        public void setCompleted() {
+            stage = Stage.COMPLETED;
+        }
+
+        public Conversion getConversion() {
+            return conversion;
+        }
+
+        public void setConversion(Conversion conversion) {
+            this.conversion = conversion;
         }
 
         public boolean addDocument(Document document) {
@@ -205,7 +218,7 @@ public class ConvertImgScript extends AbstractScript {
         }
 
         void reset() {
-            chosenConversion = null;
+            conversion = null;
             imageBuffer.clear();
         }
     }
