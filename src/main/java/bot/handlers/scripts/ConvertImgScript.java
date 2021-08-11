@@ -34,6 +34,7 @@ public class ConvertImgScript extends AbstractScript {
 
     @Override
     public void start(String chatId) {
+        LOG.debug("[{}] Image converting script has been started.", chatId);
         chatStates.putIfAbsent(chatId, new ChatStateImg());
         chatStates.get(chatId).setChoosingConversion();
         sendTextReply(chatId, "What type of conversion do you want to do?",
@@ -52,6 +53,7 @@ public class ConvertImgScript extends AbstractScript {
                 ChatStateImg state = chatStates.get(chatId);
                 if (state.isChoosingConversion()) {
                     Conversion chosenConversion = Conversion.parse(callbackQuery.getData());
+                    LOG.debug("[{}] {} conversion has been chosen in image converting script.", chatId, chosenConversion);
                     sendTextReply(chatId, "Load your " + chosenConversion.getFrom().toString() + " files",
                             ReplyKeyboards.getButtonWithText(STOP_WORD));
                     state.setConversion(chosenConversion);
@@ -65,17 +67,19 @@ public class ConvertImgScript extends AbstractScript {
                 ChatStateImg state = chatStates.get(chatId);
                 Conversion conversion = state.getConversion();
                 if (state.isLoadingFile()) {
-
                     if (message.hasText()) {
                         if (STOP_WORD.equals(message.getText())) {
                             if (state.getImageBuffer().size() == 0) {
                                 sendTextReply(chatId, "You have to load at least one photo", new ReplyKeyboardRemove(true));
+                                LOG.debug("[{}] No photo has been loaded.", chatId);
                             } else {
                                 ConversionInfo info = new ConversionInfo(combineIds(state.getImageBuffer()), conversion);
                                 if (!(loadingManager.contains(info) && sendDocumentReply(chatId, loadingManager.get(info)) != null)) {
                                     Document uploadedDocument = sendDocument(chatId, convertImages(downloadImages(state.getImageBuffer()), conversion));
                                     if (uploadedDocument != null) {
                                         saveDocumentInLoadingManager(uploadedDocument, info);
+                                        LOG.debug("[{}] Document {} has been saved in loading manager. {}. FileId {}.",
+                                                chatId, uploadedDocument.getFileUniqueId(), info, uploadedDocument.getFileId());
                                     }
                                 }
                             }
@@ -88,6 +92,8 @@ public class ConvertImgScript extends AbstractScript {
                             addDocumentWithFailMessage(state, document, chatId);
                         } else {
                             sendTextReply(chatId, "Wrong file extension", new ReplyKeyboardRemove(true));
+                            LOG.debug("[{}] Document {} has wrong extension ({} expected).",
+                                    chatId, document.getFileName(), conversion.getFrom());
                             stop(chatId);
                         }
 
@@ -96,9 +102,11 @@ public class ConvertImgScript extends AbstractScript {
                         for (PhotoSize ps : photos.subList(1, photos.size())) {
                             addDocumentWithFailMessage(state, photoSizeToDocument(ps), chatId);
                         }
+                        LOG.debug("[{}] Compressed photos has been downloaded.", chatId);
 
                     } else {
                         sendTextReply(chatId, "Document or photo required", new ReplyKeyboardRemove(true));
+                        LOG.debug("[{}] Message contains neither document nor photos.", chatId);
                         stop(chatId);
                     }
                 }
@@ -170,6 +178,7 @@ public class ConvertImgScript extends AbstractScript {
             ChatStateImg state = chatStates.get(chatId);
             state.setCompleted();
             state.reset();
+            LOG.debug("[{}] Image converting script has been stopped.", chatId);
         }
     }
 

@@ -7,6 +7,8 @@ import bot.handlers.commands.StartCommand;
 import bot.handlers.scripts.ConvertDocScript;
 import bot.handlers.scripts.ConvertImgScript;
 import bot.handlers.scripts.Script;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.telegram.telegrambots.extensions.bots.commandbot.TelegramLongPollingCommandBot;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
@@ -17,6 +19,7 @@ import java.util.List;
 import java.util.Properties;
 
 public class Bot extends TelegramLongPollingCommandBot {
+    private static final Logger LOG = LoggerFactory.getLogger(Bot.class.getName());
     private String BOT_NAME;
     private String BOT_TOKEN;
     private final List<Script> scripts = new ArrayList<>();
@@ -41,8 +44,8 @@ public class Bot extends TelegramLongPollingCommandBot {
             properties.load(is);
             BOT_NAME = properties.getProperty("BOT_NAME");
             BOT_TOKEN = properties.getProperty("BOT_TOKEN");
-        } catch (IOException e) {
-            e.printStackTrace();
+        } catch (IOException exc) {
+            LOG.error("Error during reading bot.properties file", exc);
         }
     }
 

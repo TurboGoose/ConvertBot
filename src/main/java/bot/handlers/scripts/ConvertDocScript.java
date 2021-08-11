@@ -33,6 +33,7 @@ public class ConvertDocScript extends AbstractScript {
 
     @Override
     public void start(String chatId) {
+        LOG.debug("[{}] Document converting script has started.", chatId);
         chatStates.putIfAbsent(chatId, new ChatStateDoc());
         chatStates.get(chatId).setChoosingConversion();
         sendTextReply(chatId, "What type of conversion do you want to do?",
@@ -49,6 +50,7 @@ public class ConvertDocScript extends AbstractScript {
                 ChatStateDoc state = chatStates.get(chatId);
                 if (state.isChoosingConversion()) {
                     Conversion chosenConversion = Conversion.parse(callbackQuery.getData());
+                    LOG.debug("[{}] {} conversion has been chosen in document converting script.", chatId, chosenConversion);
                     sendTextReply(chatId, "Load your " + chosenConversion.getFrom().toString() + " file");
                     state.setConversion(chosenConversion);
                     state.setLoadingFile();
@@ -60,24 +62,29 @@ public class ConvertDocScript extends AbstractScript {
             if (chatStates.containsKey(chatId)) {
                 ChatStateDoc state = chatStates.get(chatId);
                 if (state.isLoadingFile()) {
+                    Conversion conversion = state.getConversion();
                     if (message.hasDocument()) {
                         Document document = message.getDocument();
-                        Conversion conversion = state.getConversion();
                         if (isSameExtensions(document, conversion)) {
                             ConversionInfo info = new ConversionInfo(document.getFileUniqueId(), conversion);
-                            if (!(loadingManager.contains(info) && sendDocumentReply(chatId, loadingManager.get(info)) != null)) {
+                            if (!(loadingManager.contains(info) && sendDocumentReply(chatId, loadingManager.get(info)) != null)) {  // trying to send document via fileId
                                 Document uploadedDocument = sendFile(chatId,
                                         convertFile(downloadDocument(document), conversion),
                                         composeNewFilename(document, conversion));
                                 if (uploadedDocument != null) {
                                     saveInLoadingManager(uploadedDocument, info);
+                                    LOG.debug("[{}] Document {} has been saved in loading manager. {}. FileId {}.",
+                                            chatId, uploadedDocument.getFileUniqueId(), info, uploadedDocument.getFileId());
                                 }
                             }
                         } else {
-                            sendTextReply(chatId, "Wrong file extension");
+                            sendTextReply(chatId, "Wrong document extension");
+                            LOG.debug("[{}] Document {} has wrong extension ({} expected).",
+                                    chatId, document.getFileName(), conversion.getFrom());
                         }
                     } else {
                         sendTextReply(chatId, "Document required");
+                        LOG.debug("[{}] Message does not contain document (conversion {}).", chatId, conversion);
                     }
                     stop(chatId);
                 }
@@ -122,6 +129,7 @@ public class ConvertDocScript extends AbstractScript {
             ChatStateDoc state = chatStates.get(chatId);
             state.setCompleted();
             state.reset();
+            LOG.debug("[{}] Image converting script has been stopped.", chatId);
         }
     }
 

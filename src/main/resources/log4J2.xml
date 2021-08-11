@@ -11,9 +11,9 @@
     </Appenders>
 
     <Loggers>
-        <Root level="error">
-            <Appender-ref ref="Console" level="error"/>
-            <Appender-ref ref="LogFile" level="error"/>
+        <Root level="debug">
+            <Appender-ref ref="Console" level="debug"/>
+            <Appender-ref ref="LogFile" level="debug"/>
         </Root>
     </Loggers>
 </Configuration>
