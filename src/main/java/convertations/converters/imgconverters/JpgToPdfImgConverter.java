@@ -1,13 +1,13 @@
 package convertations.converters.imgconverters;
 
-import org.apache.pdfbox.pdmodel.PDDocument;
-import org.apache.pdfbox.pdmodel.PDPage;
-import org.apache.pdfbox.pdmodel.PDPageContentStream;
-import org.apache.pdfbox.pdmodel.common.PDRectangle;
-import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
+import com.itextpdf.text.Document;
+import com.itextpdf.text.DocumentException;
+import com.itextpdf.text.Image;
+import com.itextpdf.text.pdf.PdfWriter;
 import tools.files.FileNameTools;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.List;
 
@@ -16,8 +16,8 @@ public class JpgToPdfImgConverter implements ImgConverter {
     public File convert(List<File> files) {
         checkExtensions(files);
         try {
-            return combineImagesIntoPDF(files);
-        } catch (IOException exc) {
+            return convertImagesIntoPdf(files);
+        } catch (Exception exc) {
             throw new RuntimeException(exc);
         }
     }
@@ -32,27 +32,21 @@ public class JpgToPdfImgConverter implements ImgConverter {
         }
     }
 
-    private File combineImagesIntoPDF(List<File> files) throws IOException {
-        try (PDDocument doc = new PDDocument()) {
-            for (File img : files) {
-                addImageAsNewPage(doc, img.getAbsolutePath());
-            }
-            File outputFile = createTempPdfFile();
-            doc.save(outputFile);
-            return outputFile;
+    public File convertImagesIntoPdf(List<File> files) throws IOException, DocumentException {
+        File outputFile = createTempPdfFile();
+        Document document = new Document();
+        PdfWriter.getInstance(document, new FileOutputStream(outputFile));
+        document.open();
+        for (File file : files) {
+            document.newPage();
+            Image image = Image.getInstance(file.getAbsolutePath());
+            image.setAbsolutePosition(0, 0);
+            image.setBorderWidth(0);
+            image.scaleAbsolute(image.getWidth(), image.getHeight());
+            document.add(image);
         }
-    }
-
-    private void addImageAsNewPage(PDDocument doc, String imagePath) throws IOException {
-        PDImageXObject image = PDImageXObject.createFromFile(imagePath, doc);
-        int width = image.getWidth();
-        int height = image.getHeight();
-        PDRectangle pageSize = new PDRectangle(width, height);
-        PDPage page = new PDPage(pageSize);
-        doc.addPage(page);
-        try (PDPageContentStream contents = new PDPageContentStream(doc, page)) {
-            contents.drawImage(image, 0, 0, width, height);
-        }
+        document.close();
+        return outputFile;
     }
 
     private File createTempPdfFile() throws IOException {
