@@ -25,7 +25,7 @@ import java.util.Map;
 
 public class ConvertImgScript extends AbstractScript {
     private final AbstractImgConverterFactory factory = new ImgConverterFactory();
-    private final FileLoadingManager<ConversionInfo, String> loadingManager = new TelegramFileLoadingManager();
+    private final FileLoadingManager<ConversionInfo, String> loadingManager = TelegramFileLoadingManager.getInstance();
     private final Map<String, ChatStateImg> chatStates = new HashMap<>();
 
     public ConvertImgScript(TelegramLongPollingBot bot) {

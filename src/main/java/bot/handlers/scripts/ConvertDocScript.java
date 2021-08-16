@@ -24,7 +24,7 @@ import static bot.handlers.scripts.helperclasses.ReplyKeyboards.availableConvers
 
 public class ConvertDocScript extends AbstractScript {
     private final AbstractDocConverterFactory factory = new DocConverterFactory();
-    private final FileLoadingManager<ConversionInfo, String> loadingManager = new TelegramFileLoadingManager();
+    private final FileLoadingManager<ConversionInfo, String> loadingManager = TelegramFileLoadingManager.getInstance();
     private final Map<String, ChatStateDoc> chatStates = new HashMap<>();
 
     public ConvertDocScript(TelegramLongPollingBot bot) {
