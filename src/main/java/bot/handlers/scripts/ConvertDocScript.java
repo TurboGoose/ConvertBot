@@ -54,7 +54,7 @@ public class ConvertDocScript extends AbstractScript {
                     this.chosenConversion = chosenConversion;
                     state.setLoadingFile();
                     LOG.debug("[{}] {} conversion has been chosen in document converting script.", chatId, chosenConversion);
-                    sendTextReply(chatId, "Load your " + chosenConversion.getFrom().toString() + " file");
+                    sendTextReply(chatId, "Upload your " + chosenConversion.getFrom().toString() + " file");
                     answerCallbackQuery(callbackQuery);
                 }
             }

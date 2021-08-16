@@ -14,7 +14,10 @@ public class HelpCommand extends AbstractCommand {
     @Override
     public void execute(AbsSender absSender, User user, Chat chat, String[] strings) {
         String text = EmojiParser.parseToUnicode(String.format(
-                "Help is already here! :sos:%n%nType /convert command, choose type of conversion and then download your file."));
+                "Help is already here! :sos:%n%n" +
+                        "To convert document type /convert_doc, choose type of conversion and then upload your file.%n%n" +
+                        "To convert images type /convert_img, choose type of conversion, upload your images (compressed or not) " +
+                        "and then press \"Done\". You can upload no more than 10 images per one conversion."));
         sendTextReply(absSender, chat.getId(), text);
     }
 }

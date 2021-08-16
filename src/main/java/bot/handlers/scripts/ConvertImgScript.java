@@ -55,7 +55,7 @@ public class ConvertImgScript extends AbstractScript {
                     this.chosenConversion = chosenConversion;
                     stage.setLoadingFile();
                     LOG.debug("[{}] {} conversion has been chosen in image converting script.", chatId, chosenConversion);
-                    sendTextReply(chatId, "Load your " + chosenConversion.getFrom().toString() + " files",
+                    sendTextReply(chatId, "Upload your " + chosenConversion.getFrom().toString() + " files",
                             ReplyKeyboards.getButtonWithText(STOP_WORD));
                     answerCallbackQuery(callbackQuery);
                 }
@@ -66,8 +66,8 @@ public class ConvertImgScript extends AbstractScript {
                 if (message.hasText()) {
                     if (STOP_WORD.equals(message.getText())) {
                         if (images.isEmpty()) {
-                            sendTextReply(chatId, "You have to load at least one photo", new ReplyKeyboardRemove(true));
-                            LOG.debug("[{}] No photo has been loaded.", chatId);
+                            sendTextReply(chatId, "You have to upload at least one photo", new ReplyKeyboardRemove(true));
+                            LOG.debug("[{}] No photo has been uploaded.", chatId);
                         } else {
                             convertAndUploadImages();
                         }
