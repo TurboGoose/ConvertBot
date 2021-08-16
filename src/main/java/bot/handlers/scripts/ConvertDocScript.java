@@ -48,13 +48,15 @@ public class ConvertDocScript extends AbstractScript {
     public void update(Update update) {
         if (update.hasCallbackQuery()) {
             CallbackQuery callbackQuery = update.getCallbackQuery();
-            answerCallbackQuery(callbackQuery);
             if (state.isChoosingConversion()) {
                 Conversion chosenConversion = Conversion.parse(callbackQuery.getData());
-                this.chosenConversion = chosenConversion;
-                LOG.debug("[{}] {} conversion has been chosen in document converting script.", chatId, chosenConversion);
-                sendTextReply(chatId, "Load your " + chosenConversion.getFrom().toString() + " file");
-                state.setLoadingFile();
+                if (AvailableConversions.getDocConversions().contains(chosenConversion)) {
+                    this.chosenConversion = chosenConversion;
+                    state.setLoadingFile();
+                    LOG.debug("[{}] {} conversion has been chosen in document converting script.", chatId, chosenConversion);
+                    sendTextReply(chatId, "Load your " + chosenConversion.getFrom().toString() + " file");
+                    answerCallbackQuery(callbackQuery);
+                }
             }
         } else if (update.hasMessage()) {
             Message message = update.getMessage();

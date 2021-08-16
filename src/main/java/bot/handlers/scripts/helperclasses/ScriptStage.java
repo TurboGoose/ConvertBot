@@ -1,7 +1,7 @@
 package bot.handlers.scripts.helperclasses;
 
 public class ScriptStage {
-    private enum Stage {CHOOSING_CONVERSION, LOADING_FILE, COMPLETED}
+    private enum Stage {CHOOSING_CONVERSION, LOADING_FILE}
 
     private Stage stage;
 
@@ -20,13 +20,4 @@ public class ScriptStage {
     public void setLoadingFile() {
         stage = Stage.LOADING_FILE;
     }
-
-    public boolean isCompleted() {
-        return stage == Stage.COMPLETED;
-    }
-
-    public void setCompleted() {
-        stage = Stage.COMPLETED;
-    }
 }
-

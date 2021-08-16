@@ -20,9 +20,12 @@ public class DataDownloader {
         String fileName = document.getFileName();
         GetFile getFile = new GetFile(document.getFileId());
         try {
-            File outputFile = File.createTempFile(
-                    FileNameTools.extractFilenameWithoutExtension(fileName),
-                    "." + FileNameTools.extractExtension(fileName));
+            String suffix = "." + FileNameTools.extractExtension(fileName);
+            String prefix = FileNameTools.extractFilenameWithoutExtension(fileName);
+            if (prefix.length() < 3) {
+                prefix += "___";
+            }
+            File outputFile = File.createTempFile(prefix, suffix);
             outputFile.deleteOnExit();
             return bot.downloadFile(bot.execute(getFile), outputFile);
         } catch (TelegramApiException exc) {

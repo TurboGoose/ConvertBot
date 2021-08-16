@@ -29,10 +29,9 @@ public class ConvertImgScript extends AbstractScript {
     private final FileLoadingManager<ConversionInfo, String> loadingManager = TelegramFileLoadingManager.getInstance();
     private final ScriptStage stage = new ScriptStage();
     private Conversion chosenConversion;
-    private final FixedSizeList<Document> images = new FixedSizeList<>(2); // 10
+    private final FixedSizeList<Document> images = new FixedSizeList<>(10);
 
     public ConvertImgScript(TelegramLongPollingBot bot, String chatId) {
-
         super(bot);
         this.chatId = chatId;
     }
@@ -50,14 +49,16 @@ public class ConvertImgScript extends AbstractScript {
         final String STOP_WORD = "Done";
         if (update.hasCallbackQuery()) {
             CallbackQuery callbackQuery = update.getCallbackQuery();
-            answerCallbackQuery(callbackQuery);
             if (stage.isChoosingConversion()) {
                 Conversion chosenConversion = Conversion.parse(callbackQuery.getData());
-                LOG.debug("[{}] {} conversion has been chosen in image converting script.", chatId, chosenConversion);
-                sendTextReply(chatId, "Load your " + chosenConversion.getFrom().toString() + " files",
-                        ReplyKeyboards.getButtonWithText(STOP_WORD));
-                this.chosenConversion = chosenConversion;
-                stage.setLoadingFile();
+                if (AvailableConversions.getImgConversions().contains(chosenConversion)) {
+                    this.chosenConversion = chosenConversion;
+                    stage.setLoadingFile();
+                    LOG.debug("[{}] {} conversion has been chosen in image converting script.", chatId, chosenConversion);
+                    sendTextReply(chatId, "Load your " + chosenConversion.getFrom().toString() + " files",
+                            ReplyKeyboards.getButtonWithText(STOP_WORD));
+                    answerCallbackQuery(callbackQuery);
+                }
             }
         } else if (update.hasMessage()) {
             Message message = update.getMessage();

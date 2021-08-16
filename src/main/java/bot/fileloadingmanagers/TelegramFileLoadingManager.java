@@ -22,8 +22,8 @@ public class TelegramFileLoadingManager implements FileLoadingManager<Conversion
     }
 
     @Override
-    public void remove(ConversionInfo key) {
-        files.remove(key);
+    public String remove(ConversionInfo key) {
+        return files.remove(key);
     }
 
     @Override
