@@ -3,6 +3,7 @@ package bot.handlers.scripts;
 import bot.fileloadingmanagers.ConversionInfo;
 import bot.fileloadingmanagers.FileLoadingManager;
 import bot.fileloadingmanagers.TelegramFileLoadingManager;
+import bot.handlers.chats.Chats;
 import bot.handlers.scripts.helperclasses.DataDownloader;
 import convertations.conversions.AvailableConversions;
 import convertations.conversions.Conversion;
@@ -17,25 +18,25 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import tools.files.FileNameTools;
 
 import java.io.File;
-import java.util.HashMap;
-import java.util.Map;
 
 import static bot.handlers.scripts.helperclasses.ReplyKeyboards.availableConversions;
 
 public class ConvertDocScript extends AbstractScript {
+
+    private final String chatId;
     private final AbstractDocConverterFactory factory = new DocConverterFactory();
     private final FileLoadingManager<ConversionInfo, String> loadingManager = TelegramFileLoadingManager.getInstance();
-    private final Map<String, ChatStateDoc> chatStates = new HashMap<>();
+    private final ChatStateDoc state = new ChatStateDoc();
 
-    public ConvertDocScript(TelegramLongPollingBot bot) {
+    public ConvertDocScript(TelegramLongPollingBot bot, String chatId) {
         super(bot);
+        this.chatId = chatId;
     }
 
     @Override
-    public void start(String chatId) {
+    public void start() {
         LOG.debug("[{}] Document converting script has started.", chatId);
-        chatStates.putIfAbsent(chatId, new ChatStateDoc());
-        chatStates.get(chatId).setChoosingConversion();
+        state.setChoosingConversion();
         sendTextReply(chatId, "What type of conversion do you want to do?",
                 availableConversions(AvailableConversions.getDocConversions()));
     }
@@ -44,52 +45,50 @@ public class ConvertDocScript extends AbstractScript {
     public void update(Update update) {
         if (update.hasCallbackQuery()) {
             CallbackQuery callbackQuery = update.getCallbackQuery();
-            String chatId = callbackQuery.getMessage().getChatId().toString();
             answerCallbackQuery(callbackQuery);
-            if (chatStates.containsKey(chatId)) {
-                ChatStateDoc state = chatStates.get(chatId);
-                if (state.isChoosingConversion()) {
-                    Conversion chosenConversion = Conversion.parse(callbackQuery.getData());
-                    LOG.debug("[{}] {} conversion has been chosen in document converting script.", chatId, chosenConversion);
-                    sendTextReply(chatId, "Load your " + chosenConversion.getFrom().toString() + " file");
-                    state.setConversion(chosenConversion);
-                    state.setLoadingFile();
-                }
+            if (state.isChoosingConversion()) {
+                Conversion chosenConversion = Conversion.parse(callbackQuery.getData());
+                LOG.debug("[{}] {} conversion has been chosen in document converting script.", chatId, chosenConversion);
+                sendTextReply(chatId, "Load your " + chosenConversion.getFrom().toString() + " file");
+                state.setConversion(chosenConversion);
+                state.setLoadingFile();
             }
         } else if (update.hasMessage()) {
             Message message = update.getMessage();
-            String chatId = message.getChatId().toString();
-            if (chatStates.containsKey(chatId)) {
-                ChatStateDoc state = chatStates.get(chatId);
-                if (state.isLoadingFile()) {
-                    Conversion conversion = state.getConversion();
-                    if (message.hasDocument()) {
-                        Document document = message.getDocument();
-                        if (isSameExtensions(document, conversion)) {
-                            ConversionInfo info = new ConversionInfo(document.getFileUniqueId(), conversion);
-                            if (!(loadingManager.contains(info) && sendDocumentReply(chatId, loadingManager.get(info)) != null)) {  // trying to send document via fileId
-                                Document uploadedDocument = sendFile(chatId,
-                                        convertFile(downloadDocument(document), conversion),
-                                        composeNewFilename(document, conversion));
-                                if (uploadedDocument != null) {
-                                    saveInLoadingManager(uploadedDocument, info);
-                                    LOG.debug("[{}] Document {} has been saved in loading manager. {}. FileId {}.",
-                                            chatId, uploadedDocument.getFileUniqueId(), info, uploadedDocument.getFileId());
-                                }
+            if (state.isLoadingFile()) {
+                Conversion conversion = state.getConversion();
+                if (message.hasDocument()) {
+                    Document document = message.getDocument();
+                    if (isSameExtensions(document, conversion)) {
+                        ConversionInfo info = new ConversionInfo(document.getFileUniqueId(), conversion);
+                        if (!(loadingManager.contains(info) && sendDocumentReply(chatId, loadingManager.get(info)) != null)) {  // trying to send document via fileId
+                            Document uploadedDocument = sendFile(chatId,
+                                    convertFile(downloadDocument(document), conversion),
+                                    composeNewFilename(document, conversion));
+                            if (uploadedDocument != null) {
+                                saveInLoadingManager(uploadedDocument, info);
+                                LOG.debug("[{}] Document {} has been saved in loading manager. {}. FileId {}.",
+                                        chatId, uploadedDocument.getFileUniqueId(), info, uploadedDocument.getFileId());
                             }
-                        } else {
-                            sendTextReply(chatId, "Wrong document extension");
-                            LOG.debug("[{}] Document {} has wrong extension ({} expected).",
-                                    chatId, document.getFileName(), conversion.getFrom());
                         }
                     } else {
-                        sendTextReply(chatId, "Document required");
-                        LOG.debug("[{}] Message does not contain document (conversion {}).", chatId, conversion);
+                        sendTextReply(chatId, "Wrong document extension");
+                        LOG.debug("[{}] Document {} has wrong extension ({} expected).",
+                                chatId, document.getFileName(), conversion.getFrom());
                     }
-                    stop(chatId);
+                } else {
+                    sendTextReply(chatId, "Document required");
+                    LOG.debug("[{}] Message does not contain document (conversion {}).", chatId, conversion);
                 }
+                stop();
             }
         }
+    }
+
+    @Override
+    public void stop() {
+        Chats.getInstance().put(chatId, null);
+        LOG.debug("[{}] Document converting script has been stopped.", chatId);
     }
 
     private boolean isSameExtensions(Document document, Conversion conversion) {
@@ -123,18 +122,8 @@ public class ConvertDocScript extends AbstractScript {
         loadingManager.put(conversionInfo, document.getFileId());
     }
 
-    @Override
-    public void stop(String chatId) {
-        if (chatStates.containsKey(chatId)) {
-            ChatStateDoc state = chatStates.get(chatId);
-            state.setCompleted();
-            state.reset();
-            LOG.debug("[{}] Image converting script has been stopped.", chatId);
-        }
-    }
-
     static class ChatStateDoc {
-        private enum Stage {CHOOSING_CONVERSION, LOADING_FILE, COMPLETED}
+        private enum Stage {CHOOSING_CONVERSION, LOADING_FILE}
 
         private Stage stage;
         private Conversion conversion;
@@ -155,20 +144,12 @@ public class ConvertDocScript extends AbstractScript {
             stage = Stage.LOADING_FILE;
         }
 
-        public void setCompleted() {
-            stage = Stage.COMPLETED;
-        }
-
         public Conversion getConversion() {
             return conversion;
         }
 
         public void setConversion(Conversion conversion) {
             this.conversion = conversion;
-        }
-
-        public void reset() {
-            conversion = null;
         }
     }
 }
