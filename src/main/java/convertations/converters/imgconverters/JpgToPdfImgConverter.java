@@ -1,8 +1,6 @@
 package convertations.converters.imgconverters;
 
-import com.itextpdf.text.Document;
-import com.itextpdf.text.DocumentException;
-import com.itextpdf.text.Image;
+import com.itextpdf.text.*;
 import com.itextpdf.text.pdf.PdfWriter;
 import tools.files.FileNameTools;
 
@@ -38,11 +36,15 @@ public class JpgToPdfImgConverter implements ImgConverter {
         PdfWriter.getInstance(document, new FileOutputStream(outputFile));
         document.open();
         for (File file : files) {
-            document.newPage();
+
             Image image = Image.getInstance(file.getAbsolutePath());
+            float width = image.getWidth();
+            float height = image.getHeight();
             image.setAbsolutePosition(0, 0);
             image.setBorderWidth(0);
-            image.scaleAbsolute(image.getWidth(), image.getHeight());
+            image.scaleAbsolute(width, height);
+            document.setPageSize(new Rectangle(width, height));
+            document.newPage();
             document.add(image);
         }
         document.close();
