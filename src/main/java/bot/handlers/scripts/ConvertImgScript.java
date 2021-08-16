@@ -1,9 +1,9 @@
 package bot.handlers.scripts;
 
+import bot.chatstates.ChatStates;
 import bot.fileloadingmanagers.ConversionInfo;
 import bot.fileloadingmanagers.FileLoadingManager;
 import bot.fileloadingmanagers.TelegramFileLoadingManager;
-import bot.handlers.chats.Chats;
 import bot.handlers.scripts.helperclasses.DataDownloader;
 import bot.handlers.scripts.helperclasses.ImageBuffer;
 import bot.handlers.scripts.helperclasses.ReplyKeyboards;
@@ -26,7 +26,7 @@ public class ConvertImgScript extends AbstractScript {
     private final String chatId;
     private final AbstractImgConverterFactory factory = new ImgConverterFactory();
     private final FileLoadingManager<ConversionInfo, String> loadingManager = TelegramFileLoadingManager.getInstance();
-    private final ChatStateImg state = new ChatStateImg();
+    private final ScriptStateImg state = new ScriptStateImg();
 
     public ConvertImgScript(TelegramLongPollingBot bot, String chatId) {
         super(bot);
@@ -104,7 +104,7 @@ public class ConvertImgScript extends AbstractScript {
 
     @Override
     public void stop() {
-        Chats.getInstance().put(chatId, null);
+        ChatStates.getInstance().put(chatId, null);
         LOG.debug("[{}] Image converting script has been stopped.", chatId);
     }
 
@@ -148,7 +148,7 @@ public class ConvertImgScript extends AbstractScript {
         loadingManager.put(conversionInfo, document.getFileId());
     }
 
-    private void addDocumentWithFailMessage(ChatStateImg state, Document document, String chatId) {
+    private void addDocumentWithFailMessage(ScriptStateImg state, Document document, String chatId) {
         if (!state.addDocument(document)) {
             sendTextReply(chatId, String.format("You have already loaded maximum number of photos (%d)",
                     state.getImageBuffer().getCapacity()));
@@ -166,7 +166,7 @@ public class ConvertImgScript extends AbstractScript {
         return doc;
     }
 
-    static class ChatStateImg extends ConvertDocScript.ChatStateDoc {
+    static class ScriptStateImg extends ConvertDocScript.ScriptStateDoc {
 
         private final ImageBuffer imageBuffer = new ImageBuffer();
 

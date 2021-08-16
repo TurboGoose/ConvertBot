@@ -1,4 +1,4 @@
-package bot.handlers.chats;
+package bot.chatstates;
 
 import bot.handlers.scripts.Script;
 import org.telegram.telegrambots.meta.api.objects.Update;
@@ -6,29 +6,33 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import java.util.HashMap;
 import java.util.Map;
 
-public class Chats {
-    private final Map<String, Script> chats = new HashMap<>();
-    private static Chats instance;
+public class ChatStates {
+    private final Map<String, Script> chatStates = new HashMap<>();
+    private static ChatStates instance;
 
-    private Chats() {}
+    private ChatStates() {}
 
-    public static Chats getInstance() {
+    public static ChatStates getInstance() {
         if (instance == null) {
-            instance = new Chats();
+            instance = new ChatStates();
         }
         return instance;
     }
 
     public void put(String chatId, Script script) {
-        chats.put(chatId, script);
+        chatStates.put(chatId, script);
     }
 
     public Script get(String chatId) {
-        return chats.get(chatId);
+        return chatStates.get(chatId);
     }
 
     public boolean contains(String chatId) {
-        return chats.containsKey(chatId);
+        return chatStates.containsKey(chatId);
+    }
+
+    public Script remove(String chatId) {
+        return chatStates.remove(chatId);
     }
 
     public void update(Update update) {
@@ -39,7 +43,7 @@ public class Chats {
             chatId = update.getMessage().getChatId().toString();
         }
         if (chatId != null) {
-            Script script = chats.get(chatId);
+            Script script = chatStates.get(chatId);
             if (script != null) {
                 script.update(update);
             }

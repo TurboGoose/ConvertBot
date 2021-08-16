@@ -1,9 +1,9 @@
 package bot.handlers.scripts;
 
+import bot.chatstates.ChatStates;
 import bot.fileloadingmanagers.ConversionInfo;
 import bot.fileloadingmanagers.FileLoadingManager;
 import bot.fileloadingmanagers.TelegramFileLoadingManager;
-import bot.handlers.chats.Chats;
 import bot.handlers.scripts.helperclasses.DataDownloader;
 import convertations.conversions.AvailableConversions;
 import convertations.conversions.Conversion;
@@ -26,7 +26,7 @@ public class ConvertDocScript extends AbstractScript {
     private final String chatId;
     private final AbstractDocConverterFactory factory = new DocConverterFactory();
     private final FileLoadingManager<ConversionInfo, String> loadingManager = TelegramFileLoadingManager.getInstance();
-    private final ChatStateDoc state = new ChatStateDoc();
+    private final ScriptStateDoc state = new ScriptStateDoc();
 
     public ConvertDocScript(TelegramLongPollingBot bot, String chatId) {
         super(bot);
@@ -87,7 +87,7 @@ public class ConvertDocScript extends AbstractScript {
 
     @Override
     public void stop() {
-        Chats.getInstance().put(chatId, null);
+        ChatStates.getInstance().put(chatId, null);
         LOG.debug("[{}] Document converting script has been stopped.", chatId);
     }
 
@@ -122,7 +122,7 @@ public class ConvertDocScript extends AbstractScript {
         loadingManager.put(conversionInfo, document.getFileId());
     }
 
-    static class ChatStateDoc {
+    static class ScriptStateDoc {
         private enum Stage {CHOOSING_CONVERSION, LOADING_FILE}
 
         private Stage stage;

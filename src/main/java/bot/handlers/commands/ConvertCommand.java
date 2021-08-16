@@ -1,6 +1,6 @@
 package bot.handlers.commands;
 
-import bot.handlers.chats.Chats;
+import bot.chatstates.ChatStates;
 import bot.handlers.scripts.Script;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.objects.Chat;
@@ -13,7 +13,7 @@ import java.lang.reflect.InvocationTargetException;
 public class ConvertCommand extends AbstractCommand {
     private final Class<? extends Script> scriptClass;
     private final TelegramLongPollingBot bot;
-    private final Chats chats = Chats.getInstance();
+    private final ChatStates chatStates = ChatStates.getInstance();
 
     public ConvertCommand(String command, String description, TelegramLongPollingBot bot, Class<? extends Script> scriptClass) {
         super(command, description);
@@ -24,11 +24,11 @@ public class ConvertCommand extends AbstractCommand {
     @Override
     public void execute(AbsSender absSender, User user, Chat chat, String[] strings) {
         String chatId = chat.getId().toString();
-        if (chats.contains(chatId) && chats.get(chatId) != null) {
+        if (chatStates.contains(chatId) && chatStates.get(chatId) != null) {
             return;
         }
         Script script = createScriptInstance(chatId);
-        chats.put(chatId, script);
+        chatStates.put(chatId, script);
         script.start();
     }
 

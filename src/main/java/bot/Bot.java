@@ -1,6 +1,6 @@
 package bot;
 
-import bot.handlers.chats.Chats;
+import bot.chatstates.ChatStates;
 import bot.handlers.commands.ConvertCommand;
 import bot.handlers.commands.HelpCommand;
 import bot.handlers.commands.StartCommand;
@@ -17,7 +17,7 @@ import java.util.Properties;
 
 public class Bot extends TelegramLongPollingCommandBot {
     private static final Logger LOG = LoggerFactory.getLogger(Bot.class.getName());
-    private final Chats chats = Chats.getInstance();
+    private final ChatStates chatStates = ChatStates.getInstance();
     private String BOT_NAME;
     private String BOT_TOKEN;
 
@@ -52,6 +52,6 @@ public class Bot extends TelegramLongPollingCommandBot {
 
     @Override
     public void processNonCommandUpdate(Update update) {
-        chats.update(update);
+        chatStates.update(update);
     }
 }
