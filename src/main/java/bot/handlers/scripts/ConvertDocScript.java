@@ -5,6 +5,7 @@ import bot.fileloadingmanagers.ConversionInfo;
 import bot.fileloadingmanagers.FileLoadingManager;
 import bot.fileloadingmanagers.TelegramFileLoadingManager;
 import bot.handlers.scripts.helperclasses.DataDownloader;
+import bot.handlers.scripts.helperclasses.ScriptStage;
 import convertations.conversions.AvailableConversions;
 import convertations.conversions.Conversion;
 import convertations.converters.docconverters.DocConverter;
@@ -26,7 +27,9 @@ public class ConvertDocScript extends AbstractScript {
     private final String chatId;
     private final AbstractDocConverterFactory factory = new DocConverterFactory();
     private final FileLoadingManager<ConversionInfo, String> loadingManager = TelegramFileLoadingManager.getInstance();
-    private final ScriptStateDoc state = new ScriptStateDoc();
+    private final ScriptStage state = new ScriptStage();
+    private Conversion chosenConversion;
+
 
     public ConvertDocScript(TelegramLongPollingBot bot, String chatId) {
         super(bot);
@@ -48,23 +51,22 @@ public class ConvertDocScript extends AbstractScript {
             answerCallbackQuery(callbackQuery);
             if (state.isChoosingConversion()) {
                 Conversion chosenConversion = Conversion.parse(callbackQuery.getData());
+                this.chosenConversion = chosenConversion;
                 LOG.debug("[{}] {} conversion has been chosen in document converting script.", chatId, chosenConversion);
                 sendTextReply(chatId, "Load your " + chosenConversion.getFrom().toString() + " file");
-                state.setConversion(chosenConversion);
                 state.setLoadingFile();
             }
         } else if (update.hasMessage()) {
             Message message = update.getMessage();
             if (state.isLoadingFile()) {
-                Conversion conversion = state.getConversion();
                 if (message.hasDocument()) {
                     Document document = message.getDocument();
-                    if (isSameExtensions(document, conversion)) {
-                        ConversionInfo info = new ConversionInfo(document.getFileUniqueId(), conversion);
+                    if (isSameExtensions(document, chosenConversion)) {
+                        ConversionInfo info = new ConversionInfo(document.getFileUniqueId(), chosenConversion);
                         if (!(loadingManager.contains(info) && sendDocumentReply(chatId, loadingManager.get(info)) != null)) {  // trying to send document via fileId
                             Document uploadedDocument = sendFile(chatId,
-                                    convertFile(downloadDocument(document), conversion),
-                                    composeNewFilename(document, conversion));
+                                    convertFile(downloadDocument(document), chosenConversion),
+                                    composeNewFilename(document, chosenConversion));
                             if (uploadedDocument != null) {
                                 saveInLoadingManager(uploadedDocument, info);
                                 LOG.debug("[{}] Document {} has been saved in loading manager. {}. FileId {}.",
@@ -74,11 +76,11 @@ public class ConvertDocScript extends AbstractScript {
                     } else {
                         sendTextReply(chatId, "Wrong document extension");
                         LOG.debug("[{}] Document {} has wrong extension ({} expected).",
-                                chatId, document.getFileName(), conversion.getFrom());
+                                chatId, document.getFileName(), chosenConversion.getFrom());
                     }
                 } else {
                     sendTextReply(chatId, "Document required");
-                    LOG.debug("[{}] Message does not contain document (conversion {}).", chatId, conversion);
+                    LOG.debug("[{}] Message does not contain document (conversion {}).", chatId, chosenConversion);
                 }
                 stop();
             }
@@ -120,36 +122,5 @@ public class ConvertDocScript extends AbstractScript {
 
     private void saveInLoadingManager(Document document, ConversionInfo conversionInfo) {
         loadingManager.put(conversionInfo, document.getFileId());
-    }
-
-    static class ScriptStateDoc {
-        private enum Stage {CHOOSING_CONVERSION, LOADING_FILE}
-
-        private Stage stage;
-        private Conversion conversion;
-
-        public boolean isChoosingConversion() {
-            return stage == Stage.CHOOSING_CONVERSION;
-        }
-
-        public void setChoosingConversion() {
-            stage = Stage.CHOOSING_CONVERSION;
-        }
-
-        public boolean isLoadingFile() {
-            return stage == Stage.LOADING_FILE;
-        }
-
-        public void setLoadingFile() {
-            stage = Stage.LOADING_FILE;
-        }
-
-        public Conversion getConversion() {
-            return conversion;
-        }
-
-        public void setConversion(Conversion conversion) {
-            this.conversion = conversion;
-        }
     }
 }
