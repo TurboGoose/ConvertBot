@@ -2,10 +2,13 @@
 [![Build Status](https://travis-ci.org/TurboGoose/ConvertBot.svg?branch=main)](https://travis-ci.org/TurboGoose/ConvertBot)
 [![codecov](https://codecov.io/gh/TurboGoose/ConvertBot/branch/main/graph/badge.svg?token=L8UVFMLD1Q)](https://codecov.io/gh/TurboGoose/ConvertBot)
 
-Telegram bot for converting files.
+Telegram bot for converting documents and images.
 
-Available conversions:
+###Usage:
+Start conversation with __@My_Cool_Amazing_Convert_Bot__ in Telegram by typing __/start__ command.
 
-• TXT ⬌ PDF
+###Supported conversions for documents:
+* TXT ⬌ PDF
 
-Current bot ID for testing: @My_Cool_Amazing_Convert_Bot
+###Supported conversions for images:
+* JPG 🠖 PDF
