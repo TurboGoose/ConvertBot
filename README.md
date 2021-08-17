@@ -4,11 +4,14 @@
 
 Telegram bot for converting documents and images.
 
-###Usage:
-Start conversation with __@My_Cool_Amazing_Convert_Bot__ in Telegram by typing __/start__ command.
+Usage:
+===
+Start conversation with [ConvertBot](https://t.me/My_Cool_Amazing_Convert_Bot) in Telegram by typing __/start__ command.
 
-###Supported conversions for documents:
+Supported conversions:
+===
+### For documents:
 * TXT ⬌ PDF
 
-###Supported conversions for images:
+### For images:
 * JPG 🠖 PDF
