@@ -1,4 +1,4 @@
-package convertations.converters;
+package convertations.converters.docconverters;
 
 import com.itextpdf.text.*;
 import com.itextpdf.text.pdf.PdfWriter;
@@ -6,7 +6,7 @@ import tools.files.FileNameTools;
 
 import java.io.*;
 
-public class TxtToPdfConverter implements Converter {
+public class TxtToPdfDocConverter implements DocConverter {
     @Override
     public File convert(File file) {
         checkExtension(file);
@@ -15,7 +15,7 @@ public class TxtToPdfConverter implements Converter {
             writeTxtToPdf(file, pdfFile);
             return pdfFile;
         } catch (IOException | DocumentException exc) {
-            throw new IllegalStateException(exc);
+            throw new RuntimeException(exc);
         }
     }
 

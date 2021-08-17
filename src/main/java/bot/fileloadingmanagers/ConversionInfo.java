@@ -5,16 +5,16 @@ import convertations.conversions.Conversion;
 import java.util.Objects;
 
 public class ConversionInfo {
-    private final String inputFileUniqueId;
+    private final String fileUniqueId;
     private final Conversion conversion;
 
-    public ConversionInfo(String inputFileUniqueId, Conversion conversion) {
-        this.inputFileUniqueId = inputFileUniqueId;
+    public ConversionInfo(String fileUniqueId, Conversion conversion) {
+        this.fileUniqueId = fileUniqueId;
         this.conversion = conversion;
     }
 
-    public String getInputFileUniqueId() {
-        return inputFileUniqueId;
+    public String getFileUniqueId() {
+        return fileUniqueId;
     }
 
     public Conversion getConversion() {
@@ -26,11 +26,19 @@ public class ConversionInfo {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         ConversionInfo that = (ConversionInfo) o;
-        return Objects.equals(conversion, that.conversion) && Objects.equals(inputFileUniqueId, that.inputFileUniqueId);
+        return Objects.equals(conversion, that.conversion) && Objects.equals(fileUniqueId, that.fileUniqueId);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(conversion, inputFileUniqueId);
+        return Objects.hash(conversion, fileUniqueId);
+    }
+
+    @Override
+    public String toString() {
+        return "ConversionInfo{" +
+                "FileUniqueId='" + fileUniqueId + '\'' +
+                ", conversion=" + conversion +
+                '}';
     }
 }

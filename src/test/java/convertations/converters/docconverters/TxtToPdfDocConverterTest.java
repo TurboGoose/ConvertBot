@@ -1,9 +1,7 @@
-package convertations;
+package convertations.converters.docconverters;
 
 import com.itextpdf.text.pdf.PdfReader;
 import com.itextpdf.text.pdf.parser.PdfTextExtractor;
-import convertations.converters.Converter;
-import convertations.converters.TxtToPdfConverter;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -15,10 +13,10 @@ import java.io.PrintWriter;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-class TxtToPdfConverterTest {
+class TxtToPdfDocConverterTest {
     @TempDir
     File tempDir;
-    Converter converter = new TxtToPdfConverter();
+    DocConverter converter = new TxtToPdfDocConverter();
 
     @Test
     public void convertBlankTxtToPdf() throws Exception {

@@ -5,6 +5,16 @@ import java.util.Map;
 
 public class TelegramFileLoadingManager implements FileLoadingManager<ConversionInfo, String> {
     private final Map<ConversionInfo, String> files = new HashMap<>();
+    private static FileLoadingManager<ConversionInfo, String> instance;
+
+    private TelegramFileLoadingManager() {}
+
+    public static FileLoadingManager<ConversionInfo, String> getInstance() {
+        if (instance == null) {
+            instance = new TelegramFileLoadingManager();
+        }
+        return instance;
+    }
 
     @Override
     public void put(ConversionInfo key, String value) {
@@ -12,8 +22,8 @@ public class TelegramFileLoadingManager implements FileLoadingManager<Conversion
     }
 
     @Override
-    public void remove(ConversionInfo key) {
-        files.remove(key);
+    public String remove(ConversionInfo key) {
+        return files.remove(key);
     }
 
     @Override

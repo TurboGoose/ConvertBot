@@ -1,11 +1,14 @@
 package bot.handlers.commands;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.telegram.telegrambots.extensions.bots.commandbot.commands.BotCommand;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.bots.AbsSender;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 public abstract class AbstractCommand extends BotCommand {
+    protected final Logger LOG = LoggerFactory.getLogger(getClass());
 
     public AbstractCommand(String command, String description) {
         super(command, description);
@@ -15,8 +18,8 @@ public abstract class AbstractCommand extends BotCommand {
         SendMessage sendMessage = new SendMessage(chatId.toString(), text);
         try {
             sender.execute(sendMessage);
-        } catch (TelegramApiException e) {
-            e.printStackTrace();
+        } catch (TelegramApiException exc) {
+            LOG.error("Failed sending text reply \"{}\" for chat: {}", text, chatId, exc);
         }
     }
 }

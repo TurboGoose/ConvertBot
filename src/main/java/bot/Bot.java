@@ -1,31 +1,32 @@
 package bot;
 
+import bot.chatstates.ChatStates;
 import bot.handlers.commands.ConvertCommand;
 import bot.handlers.commands.HelpCommand;
 import bot.handlers.commands.StartCommand;
-import bot.handlers.scripts.ConvertScript;
-import bot.handlers.scripts.Script;
+import bot.handlers.scripts.ConvertDocScript;
+import bot.handlers.scripts.ConvertImgScript;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.telegram.telegrambots.extensions.bots.commandbot.TelegramLongPollingCommandBot;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Properties;
 
 public class Bot extends TelegramLongPollingCommandBot {
+    private static final Logger LOG = LoggerFactory.getLogger(Bot.class.getName());
+    private final ChatStates chatStates = ChatStates.getInstance();
     private String BOT_NAME;
     private String BOT_TOKEN;
-    private final List<Script> scripts = new ArrayList<>();
 
     public Bot() {
         readBotProperties();
         register(new StartCommand("start", "Start bot"));
         register(new HelpCommand("help", "Request help"));
-        Script convertScript = new ConvertScript(this);
-        register(new ConvertCommand("convert", "Convert files", convertScript));
-        scripts.add(convertScript);
+        register(new ConvertCommand("convert_doc", "Convert documents", this, ConvertDocScript.class));
+        register(new ConvertCommand("convert_img", "Convert images", this, ConvertImgScript.class));
     }
 
     private void readBotProperties() {
@@ -34,8 +35,8 @@ public class Bot extends TelegramLongPollingCommandBot {
             properties.load(is);
             BOT_NAME = properties.getProperty("BOT_NAME");
             BOT_TOKEN = properties.getProperty("BOT_TOKEN");
-        } catch (IOException e) {
-            e.printStackTrace();
+        } catch (IOException exc) {
+            LOG.error("Error during reading bot.properties file", exc);
         }
     }
 
@@ -51,6 +52,6 @@ public class Bot extends TelegramLongPollingCommandBot {
 
     @Override
     public void processNonCommandUpdate(Update update) {
-        scripts.forEach(s -> s.update(update));
+        chatStates.update(update);
     }
 }

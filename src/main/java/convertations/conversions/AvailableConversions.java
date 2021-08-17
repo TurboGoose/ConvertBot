@@ -3,19 +3,18 @@ package convertations.conversions;
 import java.util.*;
 
 public class AvailableConversions {
-    private static final List<Conversion> AVAILABLE = List.of(
-                new Conversion(FileType.PDF, FileType.TXT),
-                new Conversion(FileType.TXT, FileType.PDF));
+    private static final List<Conversion> DOC_CONVERSIONS = List.of(
+            new Conversion(FileType.PDF, FileType.TXT),
+            new Conversion(FileType.TXT, FileType.PDF));
 
-    public static List<Conversion> getAvailable() {
-        return AVAILABLE;
+    private static final List<Conversion> IMG_CONVERSIONS = List.of(
+            new Conversion(FileType.JPG, FileType.PDF));
+
+    public static List<Conversion> getDocConversions() {
+        return DOC_CONVERSIONS;
     }
 
-    public static boolean contains(Conversion conversion) {
-        return AVAILABLE.contains(conversion);
-    }
-
-    public static boolean contains(FileType from, FileType to) {
-        return AVAILABLE.contains(new Conversion(from, to));
+    public static List<Conversion> getImgConversions() {
+        return IMG_CONVERSIONS;
     }
 }
