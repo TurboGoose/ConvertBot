@@ -1,7 +1,8 @@
-package com.telegram.convertations.converters.imgconverters;
+package com.telegram.convertations.converters;
 
 import com.itextpdf.text.*;
 import com.itextpdf.text.pdf.PdfWriter;
+import com.telegram.convertations.conversions.SupportedFileExtensions;
 import com.telegram.utils.FileNameTools;
 
 import java.io.File;
@@ -9,7 +10,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.List;
 
-public class JpgToPdfImgConverter implements ImgConverter {
+public class Img2PdfConverter implements Converter {
     @Override
     public File convert(List<File> files) {
         checkExtensions(files);
@@ -22,10 +23,9 @@ public class JpgToPdfImgConverter implements ImgConverter {
 
     private void checkExtensions(List<File> files) {
         for (File file : files) {
-            String extension = FileNameTools.extractExtension(file);
-            if (!"jpg".equals(extension) && !"jpeg".equals(extension)) {
-                throw new IllegalArgumentException(
-                        String.format("Wrong file extension: got \".%s\" when \".jpg\" expected.", extension));
+            String extension = FileNameTools.extractExtension(file).toLowerCase();
+            if (!SupportedFileExtensions.get().contains(extension)) {
+                throw new IllegalArgumentException(String.format("Wrong file extension: %s.", extension));
             }
         }
     }
@@ -36,7 +36,6 @@ public class JpgToPdfImgConverter implements ImgConverter {
         PdfWriter.getInstance(document, new FileOutputStream(outputFile));
         document.open();
         for (File file : files) {
-
             Image image = Image.getInstance(file.getAbsolutePath());
             float width = image.getWidth();
             float height = image.getHeight();

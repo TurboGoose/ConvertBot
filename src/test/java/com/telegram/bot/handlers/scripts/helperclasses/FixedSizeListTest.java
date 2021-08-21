@@ -1,12 +1,12 @@
 package com.telegram.bot.handlers.scripts.helperclasses;
 
+import com.telegram.bot.handlers.scripts.helperclasses.storage.FixedSizeList;
+import com.telegram.bot.handlers.scripts.helperclasses.storage.Storage;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
-
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class FixedSizeListTest {
     @Test
@@ -22,34 +22,45 @@ class FixedSizeListTest {
     }
 
     @Test
-    public void whenAddValueThenGetThenClear() {
+    public void whenAddValueThenContainsThenGetThenClear() {
         int capacity = 5;
-        FixedSizeList<Integer> list = new FixedSizeList<>(capacity);
+        Storage<Integer> storage = new FixedSizeList<>(capacity);
 
-        assertThat(list.isEmpty(), is(true));
-        assertThat(list.add(1), is(true));
-        assertThat(list.getCapacity(), is(capacity));
+        assertThat(storage.isEmpty(), is(true));
+        assertThat(storage.contains(1), is(false));
+        assertThat(storage.add(1), is(true));
+        assertThat(storage.contains(1), is(true));
+        assertThat(storage.getCapacity(), is(capacity));
+        assertThat(storage.size(), is(1));
 
-        assertThat(list.isEmpty(), is(false));
-        assertThat(list.get(), is(List.of(1)));
-        assertThat(list.add(2), is(true));
-        assertThat(list.getCapacity(), is(capacity));
+        assertThat(storage.isEmpty(), is(false));
+        assertThat(storage.get(0), is(1));
+        assertThat(storage.contains(2), is(false));
+        assertThat(storage.add(2), is(true));
+        assertThat(storage.contains(2), is(true));
+        assertThat(storage.getCapacity(), is(capacity));
+        assertThat(storage.size(), is(2));
 
-        assertThat(list.isEmpty(), is(false));
-        assertThat(list.get(), is(List.of(1, 2)));
-        assertThat(list.getCapacity(), is(capacity));
+        assertThat(storage.isEmpty(), is(false));
+        assertThat(storage.get(1), is(2));
+        assertThat(storage.getCapacity(), is(capacity));
 
-        list.clear();
-        assertThat(list.isEmpty(), is(true));
-        assertThat(list.getCapacity(), is(capacity));
-
+        storage.clear();
+        assertThat(storage.isEmpty(), is(true));
+        assertThat(storage.getCapacity(), is(capacity));
     }
 
     @Test
     public void whenTryingToAddValueOutOfCapacityThenException() {
-        FixedSizeList<Integer> list = new FixedSizeList<>(1);
-        assertThat(list.add(1), is(true));
-        assertThat(list.add(2), is(false));
+        Storage<Integer> storage = new FixedSizeList<>(1);
+        assertThat(storage.isEmpty(), is(true));
+        assertThat(storage.isFull(), is(false));
+        assertThat(storage.add(1), is(true));
+        assertThat(storage.isEmpty(), is(false));
+        assertThat(storage.isFull(), is(true));
+        assertThat(storage.add(2), is(false));
+        assertThat(storage.isEmpty(), is(false));
+        assertThat(storage.isFull(), is(true));
     }
 
     @Test
@@ -58,7 +69,9 @@ class FixedSizeListTest {
         assertThat(list.add(1), is(true));
         assertThat(list.add(2), is(true));
         assertThat(list.add(3), is(true));
-        for (int i : list) {}
+        for (int i : list) {
+            System.out.println(i);
+        }
         list.forEach(i -> {});
     }
 }

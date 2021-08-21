@@ -1,4 +1,4 @@
-package com.telegram.convertations.converters.imgconverters;
+package com.telegram.convertations.converters;
 
 import org.junit.jupiter.api.Test;
 
@@ -10,8 +10,8 @@ import java.util.Objects;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-class JpgToPdfImgConverterTest {
-    ImgConverter converter = new JpgToPdfImgConverter();
+class Img2PdfConverterTest {
+    Converter converter = new Img2PdfConverter();
 
     @Test
     public void convertThenCheckResultExisting() throws Exception {

@@ -4,8 +4,7 @@ import com.telegram.bot.chatstates.ChatStates;
 import com.telegram.bot.handlers.commands.ConvertCommand;
 import com.telegram.bot.handlers.commands.HelpCommand;
 import com.telegram.bot.handlers.commands.StartCommand;
-import com.telegram.bot.handlers.scripts.ConvertDocScript;
-import com.telegram.bot.handlers.scripts.ConvertImgScript;
+import com.telegram.bot.handlers.scripts.ConvertScript;
 import org.telegram.telegrambots.extensions.bots.commandbot.TelegramLongPollingCommandBot;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
@@ -21,10 +20,9 @@ public class Bot extends TelegramLongPollingCommandBot {
     }
 
     private void registerCommands() {
-        register(new StartCommand("start", "Start com.telegram.bot"));
+        register(new StartCommand("start", "Start bot"));
         register(new HelpCommand("help", "Request help"));
-        register(new ConvertCommand("convert_doc", "Convert documents", this, ConvertDocScript.class));
-        register(new ConvertCommand("convert_img", "Convert images", this, ConvertImgScript.class));
+        register(new ConvertCommand("convert", "Convert images to PDF", this, ConvertScript.class));
     }
 
     @Override
