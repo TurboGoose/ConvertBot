@@ -2,11 +2,15 @@ package com.telegram.bot.chatstates;
 
 import com.telegram.bot.handlers.scripts.Script;
 import org.junit.jupiter.api.Test;
-import org.telegram.telegrambots.meta.api.objects.Update;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
+import static org.mockito.Mockito.mock;
 
+@ExtendWith(MockitoExtension.class)
 class ChatStatesTest {
     @Test
     public void testSingletonWorking() {
@@ -14,7 +18,6 @@ class ChatStatesTest {
         ChatStates chatStatesInstance2 = ChatStates.getInstance();
         assertThat(chatStatesInstance1, is(chatStatesInstance2));
     }
-
 
     @Test
     public void useContainsWhenEmpty() {
@@ -32,7 +35,7 @@ class ChatStatesTest {
     public void putThenContainsThenGetThenRemove() {
         ChatStates chatStates = ChatStates.getInstance();
         String chatId = "1";
-        Script script = new StabScript();
+        Script script = mock(Script.class);
 
         chatStates.put(chatId, script);
         assertThat(chatStates.contains(chatId), is(true));
@@ -41,16 +44,4 @@ class ChatStatesTest {
         assertThat(chatStates.remove(chatId), is(script));
         assertThat(chatStates.contains(chatId), is(false));
     }
-}
-
-class StabScript implements Script {
-
-    @Override
-    public void start() {}
-
-    @Override
-    public void update(Update update) {}
-
-    @Override
-    public void stop() {}
 }
