@@ -1,6 +1,9 @@
 package com.telegram.convertations.converters;
 
-import com.itextpdf.text.*;
+import com.itextpdf.text.Document;
+import com.itextpdf.text.DocumentException;
+import com.itextpdf.text.Image;
+import com.itextpdf.text.Rectangle;
 import com.itextpdf.text.pdf.PdfWriter;
 import com.telegram.convertations.conversions.SupportedFileExtensions;
 import com.telegram.utils.FileNameTools;
