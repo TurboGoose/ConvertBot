@@ -8,14 +8,10 @@ import org.telegram.telegrambots.meta.bots.AbsSender;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 public abstract class AbstractCommand extends BotCommand {
-    protected Logger LOG = LoggerFactory.getLogger(getClass());
+    protected final Logger LOG = LoggerFactory.getLogger(getClass());
 
     public AbstractCommand(String command, String description) {
         super(command, description);
-    }
-
-    protected void setLogger(Logger logger) {
-        this.LOG = logger;
     }
 
     public void sendTextReply(AbsSender sender, Long chatId, String text) {

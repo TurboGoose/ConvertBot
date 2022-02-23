@@ -1,13 +1,14 @@
 package com.telegram.bot.handlers.commands;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
-import org.mockito.invocation.InvocationOnMock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.slf4j.Logger;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.objects.Chat;
+import org.telegram.telegrambots.meta.api.objects.User;
 import org.telegram.telegrambots.meta.bots.AbsSender;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
@@ -19,13 +20,17 @@ import static org.mockito.Mockito.*;
 class AbstractCommandTest {
     @Mock
     AbsSender sender;
-
+    AbstractCommand command;
     final Long chatId = 1L;
     final String text = "message";
 
+    @BeforeEach
+    public void setUp() {
+        command = new StubCommand("com", "desc");
+    }
+
     @Test
-    public void whenSendTextReplyThenCallExecuteOnAbsSenderSuccessfully() throws TelegramApiException {
-        AbstractCommand command = mock(AbstractCommand.class, InvocationOnMock::callRealMethod);
+    public void whenSendingTextReplyAndExecuteMethodCallsSuccessfully() throws TelegramApiException {
         command.sendTextReply(sender, chatId, text);
         ArgumentCaptor<SendMessage> captor = ArgumentCaptor.forClass(SendMessage.class);
         verify(sender).execute(captor.capture());
@@ -36,10 +41,7 @@ class AbstractCommandTest {
     }
 
     @Test
-    public void whenSendTextReplyThenAbsSenderThrowsException() throws TelegramApiException {
-        AbstractCommand command = mock(AbstractCommand.class, InvocationOnMock::callRealMethod);
-        Logger log = mock(Logger.class);
-        command.setLogger(log);
+    public void whenSendingTextReplyAndExecuteMethodThrowsExceptionThenNothingHappens() throws TelegramApiException {
         Throwable exc = new TelegramApiException();
         when(sender.execute(any(SendMessage.class))).thenThrow(exc);
         command.sendTextReply(sender, chatId, text);
@@ -48,7 +50,15 @@ class AbstractCommandTest {
         SendMessage sentMessage = captor.getValue();
         assertThat(sentMessage.getChatId(), is(chatId.toString()));
         assertThat(sentMessage.getText(), is(text));
-        verify(log).error("Failed sending text reply \"{}\" for chat: {}", text, chatId, exc);
         verifyNoMoreInteractions(sender);
     }
+}
+
+class StubCommand extends AbstractCommand {
+    public StubCommand(String command, String description) {
+        super(command, description);
+    }
+
+    @Override
+    public void execute(AbsSender absSender, User user, Chat chat, String[] strings) {}
 }

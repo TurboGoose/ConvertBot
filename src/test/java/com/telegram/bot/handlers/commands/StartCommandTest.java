@@ -1,6 +1,5 @@
 package com.telegram.bot.handlers.commands;
 
-import com.vdurmont.emoji.EmojiParser;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -23,8 +22,6 @@ class StartCommandTest {
 
     final Long chatId = 1L;
     final String[] strings = new String[0];
-    final String text = EmojiParser.parseToUnicode(String.format(
-            "Hello :wave:%nMy name is ConvertBot.%nI can convert your images to one PDF file.%n%nType /convert command to start the conversion dialog."));
 
     @BeforeEach
     public void setUp() {
@@ -36,6 +33,6 @@ class StartCommandTest {
         StartCommand start = mock(StartCommand.class);
         doCallRealMethod().when(start).execute(sender, user, chat, strings);
         start.execute(sender, user, chat, strings);
-        verify(start).sendTextReply(sender, chatId, text);
+        verify(start).sendTextReply(eq(sender), eq(chatId), anyString());
     }
 }

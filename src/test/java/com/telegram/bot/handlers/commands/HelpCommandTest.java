@@ -1,7 +1,5 @@
 package com.telegram.bot.handlers.commands;
 
-import com.telegram.bot.handlers.scripts.ConvertScript;
-import com.vdurmont.emoji.EmojiParser;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -24,10 +22,6 @@ class HelpCommandTest {
 
     final Long chatId = 1L;
     final String[] strings = new String[0];
-    final String text = EmojiParser.parseToUnicode(String.format(
-            "Help is already here! :sos:%n%nTo convert images to PDF file type /convert command, upload your images (compressed or not) " +
-                    "and then press \"Done\".%nSupported image formats:   JPG, PNG.%nYou can upload no more than %d images per one conversion.", ConvertScript.CAPACITY));
-
 
     @BeforeEach
     public void setUp() {
@@ -39,6 +33,6 @@ class HelpCommandTest {
         HelpCommand help = mock(HelpCommand.class);
         doCallRealMethod().when(help).execute(sender, user, chat, strings);
         help.execute(sender, user, chat, strings);
-        verify(help).sendTextReply(sender, chatId, text);
+        verify(help).sendTextReply(eq(sender), eq(chatId), anyString());
     }
 }
