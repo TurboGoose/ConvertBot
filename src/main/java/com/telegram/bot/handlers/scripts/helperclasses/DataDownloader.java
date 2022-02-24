@@ -27,11 +27,12 @@ public class DataDownloader {
             }
             File outputFile = File.createTempFile(prefix, suffix);
             outputFile.deleteOnExit();
+
             return bot.downloadFile(bot.execute(getFile), outputFile);
         } catch (TelegramApiException exc) {
             throw new RuntimeException(exc);
         } catch (IOException exc) {
-            throw new RuntimeException("Unable to create temporary file for " + fileName);
+            throw new RuntimeException("Unable to create temporary file for " + fileName, exc);
         }
     }
 }
