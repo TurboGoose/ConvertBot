@@ -33,7 +33,7 @@ public class Img2PdfConverter implements Converter {
         }
     }
 
-    public File convertImagesIntoPdf(List<File> files) throws IOException, DocumentException {
+    private File convertImagesIntoPdf(List<File> files) throws IOException, DocumentException {
         File outputFile = createTempPdfFile();
         Document document = new Document();
         PdfWriter.getInstance(document, new FileOutputStream(outputFile));

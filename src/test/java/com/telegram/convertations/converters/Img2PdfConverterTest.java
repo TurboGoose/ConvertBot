@@ -19,5 +19,7 @@ class Img2PdfConverterTest {
                 new File(ClassLoader.getSystemResource("jpgToPdfTests/pics").toURI()).listFiles()));
         File targetFile = converter.convert(sourceFiles);
         assertThat(targetFile.exists(), is(true));
+        String fineName = targetFile.getName();
+        assertThat(fineName.substring(fineName.lastIndexOf(".")), is(".pdf"));
     }
 }
