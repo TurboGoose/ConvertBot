@@ -1,4 +1,4 @@
-package com.telegram.bot.handlers.scripts.helperclasses.storage;
+package com.telegram.bot.storage;
 
 import java.util.ArrayList;
 import java.util.Iterator;

@@ -1,4 +1,4 @@
-package com.telegram.bot.handlers.scripts.helperclasses.storage;
+package com.telegram.bot.storage;
 
 public interface Storage<T> extends Iterable<T> {
     boolean add(T value);

@@ -1,6 +1,7 @@
 package com.telegram.bot.handlers.commands;
 
 import com.telegram.bot.chatstates.ChatStates;
+import com.telegram.bot.chatstates.ChatStatesImpl;
 import com.telegram.bot.handlers.scripts.Script;
 import com.telegram.bot.handlers.scripts.factory.ScriptFactory;
 import org.junit.jupiter.api.AfterEach;
@@ -32,6 +33,7 @@ class ConvertCommandTest {
     Chat mockedChat;
 
     final String chatId = "1";
+    final ChatStates states = new ChatStatesImpl(chatId);
     ConvertCommand command;
 
     @BeforeEach
@@ -42,9 +44,8 @@ class ConvertCommandTest {
 
     @AfterEach
     public void tearDown() {
-        ChatStates states = ChatStates.getInstance();
-        if (states.contains(chatId)) {
-            states.remove(chatId);
+        if (states.contains()) {
+            states.remove();
         }
     }
 
@@ -53,24 +54,22 @@ class ConvertCommandTest {
         try (MockedStatic<ScriptFactory> factoryMockedStatic = mockStatic(ScriptFactory.class)) {
             Script mockedScript = mock(Script.class);
             factoryMockedStatic.when(() -> ScriptFactory.create(Script.class, bot, chatId)).thenReturn(mockedScript);
-            ChatStates states = ChatStates.getInstance();
-            assertThat(states.contains(chatId), is(false));
+            assertThat(states.contains(), is(false));
             command.execute(mockedSender, mockedUser, mockedChat, new String[0]);
             factoryMockedStatic.verify(() -> ScriptFactory.create(Script.class, bot, chatId));
-            assertThat(states.contains(chatId), is(true));
-            assertThat(states.get(chatId), is(equalTo(mockedScript)));
+            assertThat(states.contains(), is(true));
+            assertThat(states.get(), is(equalTo(mockedScript)));
             verify(mockedScript).start();
         }
     }
 
     @Test
     public void whenCallExecuteAndScriptExistsThenNothingHappens() {
-        ChatStates states = ChatStates.getInstance();
         Script mockedScript = mock(Script.class);
-        assertThat(states.contains(chatId), is(false));
-        states.put(chatId, mockedScript);
-        assertThat(states.contains(chatId), is(true));
-        assertThat(states.get(chatId), is(equalTo(mockedScript)));
+        assertThat(states.contains(), is(false));
+        states.put(mockedScript);
+        assertThat(states.contains(), is(true));
+        assertThat(states.get(), is(equalTo(mockedScript)));
         try (MockedStatic<ScriptFactory> factoryMockedStatic = mockStatic(ScriptFactory.class)) {
             command.execute(mockedSender, mockedUser, mockedChat, new String[0]);
             factoryMockedStatic.verify(() -> ScriptFactory.create(Script.class, bot, chatId), never());
@@ -81,11 +80,10 @@ class ConvertCommandTest {
     public void whenUnknownScriptTypePassedAndCallExecuteThenScriptDoesntCreate() {
         try (MockedStatic<ScriptFactory> factoryMockedStatic = mockStatic(ScriptFactory.class)) {
             factoryMockedStatic.when(() -> ScriptFactory.create(Script.class, bot, chatId)).thenReturn(null);
-            ChatStates states = ChatStates.getInstance();
-            assertThat(states.contains(chatId), is(false));
+            assertThat(states.contains(), is(false));
             command.execute(mockedSender, mockedUser, mockedChat, new String[0]);
             factoryMockedStatic.verify(() -> ScriptFactory.create(Script.class, bot, chatId));
-            assertThat(states.contains(chatId), is(false));
+            assertThat(states.contains(), is(false));
         }
     }
 }

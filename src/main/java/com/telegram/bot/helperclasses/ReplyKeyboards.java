@@ -1,4 +1,4 @@
-package com.telegram.bot.handlers.scripts.helperclasses;
+package com.telegram.bot.helperclasses;
 
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;

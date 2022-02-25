@@ -1,4 +1,4 @@
-package com.telegram.bot.handlers.scripts;
+package com.telegram.bot.chatservices.senders;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -21,19 +21,20 @@ import java.io.File;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-class AbstractScriptTest {
+class SenderChatServiceImplTest {
     @Mock
     TelegramLongPollingBot botMocked;
-    AbstractScript script;
+    SenderChatService senderChatService;
     final String chatId = "1";
     final ReplyKeyboardMarkup keyboard = new ReplyKeyboardMarkup();
 
     @BeforeEach
     public void setUp() {
-        script = new StubScript(botMocked);
+        senderChatService = new SenderChatServiceImpl(botMocked, chatId);
     }
 
     @Nested
@@ -43,7 +44,7 @@ class AbstractScriptTest {
 
         @Test
         public void whenExecuteMethodCallsSuccessfully() throws TelegramApiException {
-            script.sendTextReply(chatId, text, keyboard);
+            senderChatService.sendTextReply(text, keyboard);
             ArgumentCaptor<SendMessage> captor = ArgumentCaptor.forClass(SendMessage.class);
             verify(botMocked).execute(captor.capture());
             SendMessage sentMessage = captor.getValue();
@@ -57,7 +58,7 @@ class AbstractScriptTest {
         public void whenExecuteMethodThrowsException() throws TelegramApiException {
             Throwable exc = new TelegramApiException();
             doThrow(exc).when(botMocked).execute(any(SendMessage.class));
-            script.sendTextReply(chatId, text, keyboard);
+            senderChatService.sendTextReply(text, keyboard);
             ArgumentCaptor<SendMessage> captor = ArgumentCaptor.forClass(SendMessage.class);
             verify(botMocked).execute(captor.capture());
             SendMessage sentMessage = captor.getValue();
@@ -81,7 +82,7 @@ class AbstractScriptTest {
             Document document = new Document();
             message.setDocument(document);
             when(botMocked.execute(any(SendDocument.class))).thenReturn(message);
-            Document uploadedDocument = script.sendDocumentReply(chatId, file, filename, keyboard);
+            Document uploadedDocument = senderChatService.sendDocumentReply(file, filename, keyboard);
             assertThat(uploadedDocument, is(document));
             ArgumentCaptor<SendDocument> captor = ArgumentCaptor.forClass(SendDocument.class);
             verify(botMocked).execute(captor.capture());
@@ -97,7 +98,7 @@ class AbstractScriptTest {
         @Test
         public void whenSendingDocumentViaPassingFileAndExecuteMethodThrowsExceptionThenReturnNull() throws TelegramApiException {
             when(botMocked.execute(any(SendDocument.class))).thenThrow(new TelegramApiException());
-            Document uploadedDocument = script.sendDocumentReply(chatId, file, filename, keyboard);
+            Document uploadedDocument = senderChatService.sendDocumentReply(file, filename, keyboard);
             assertThat(uploadedDocument, is(nullValue()));
             ArgumentCaptor<SendDocument> captor = ArgumentCaptor.forClass(SendDocument.class);
             verify(botMocked).execute(captor.capture());
@@ -116,7 +117,7 @@ class AbstractScriptTest {
             Document document = new Document();
             message.setDocument(document);
             when(botMocked.execute(any(SendDocument.class))).thenReturn(message);
-            Document uploadedDocument = script.sendDocumentReply(chatId, fileId, keyboard);
+            Document uploadedDocument = senderChatService.sendDocumentReply(fileId, keyboard);
             assertThat(uploadedDocument, is(document));
             ArgumentCaptor<SendDocument> captor = ArgumentCaptor.forClass(SendDocument.class);
             verify(botMocked).execute(captor.capture());
@@ -130,7 +131,7 @@ class AbstractScriptTest {
         @Test
         public void whenSendingDocumentViaFileIdAndExecuteMethodThrowsExceptionThenReturnNull() throws TelegramApiException {
             when(botMocked.execute(any(SendDocument.class))).thenThrow(new TelegramApiException());
-            Document uploadedDocument = script.sendDocumentReply(chatId, fileId, keyboard);
+            Document uploadedDocument = senderChatService.sendDocumentReply(fileId, keyboard);
             assertThat(uploadedDocument, is(nullValue()));
             ArgumentCaptor<SendDocument> captor = ArgumentCaptor.forClass(SendDocument.class);
             verify(botMocked).execute(captor.capture());
@@ -156,7 +157,7 @@ class AbstractScriptTest {
 
         @Test
         public void whenAnsweringCallbackAndExecuteMethodCallsSuccessfully() throws TelegramApiException {
-            script.answerCallbackQuery(callbackQueryMocked);
+            senderChatService.answerCallbackQuery(callbackQueryMocked);
             ArgumentCaptor<AnswerCallbackQuery> captor = ArgumentCaptor.forClass(AnswerCallbackQuery.class);
             verify(botMocked).execute(captor.capture());
             AnswerCallbackQuery answerCallbackQuery = captor.getValue();
@@ -172,7 +173,7 @@ class AbstractScriptTest {
             message.setChat(chat);
             when(callbackQueryMocked.getMessage()).thenReturn(message);
             doThrow(new TelegramApiException()).when(botMocked).execute(any(AnswerCallbackQuery.class));
-            script.answerCallbackQuery(callbackQueryMocked);
+            senderChatService.answerCallbackQuery(callbackQueryMocked);
             ArgumentCaptor<AnswerCallbackQuery> captor = ArgumentCaptor.forClass(AnswerCallbackQuery.class);
             verify(botMocked).execute(captor.capture());
             AnswerCallbackQuery answerCallbackQuery = captor.getValue();
@@ -180,19 +181,4 @@ class AbstractScriptTest {
             verifyNoMoreInteractions(botMocked);
         }
     }
-}
-
-class StubScript extends AbstractScript {
-    public StubScript(TelegramLongPollingBot bot) {
-        super(bot);
-    }
-
-    @Override
-    public void start() {}
-
-    @Override
-    public void update(Update update) {}
-
-    @Override
-    public void stop() {}
 }

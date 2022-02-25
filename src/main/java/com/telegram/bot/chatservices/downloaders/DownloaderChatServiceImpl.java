@@ -1,4 +1,4 @@
-package com.telegram.bot.handlers.scripts.helperclasses;
+package com.telegram.bot.chatservices.downloaders;
 
 import com.telegram.utils.FileNameTools;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
@@ -9,13 +9,14 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import java.io.File;
 import java.io.IOException;
 
-public class DataDownloader {
+public class DownloaderChatServiceImpl implements DownloaderChatService {
     private final TelegramLongPollingBot bot;
 
-    public DataDownloader(TelegramLongPollingBot bot) {
+    public DownloaderChatServiceImpl(TelegramLongPollingBot bot) {
         this.bot = bot;
     }
 
+    @Override
     public File downloadDocument(Document document) {
         String fileName = document.getFileName();
         GetFile getFile = new GetFile(document.getFileId());

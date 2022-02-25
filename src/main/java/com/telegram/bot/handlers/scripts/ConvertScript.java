@@ -1,17 +1,17 @@
 package com.telegram.bot.handlers.scripts;
 
+import com.telegram.bot.chatservices.downloaders.DownloaderChatService;
+import com.telegram.bot.chatservices.senders.SenderChatService;
 import com.telegram.bot.chatstates.ChatStates;
 import com.telegram.bot.fileloadingmanagers.FileLoadingManager;
 import com.telegram.bot.fileloadingmanagers.FileLoadingManagerImpl;
-import com.telegram.bot.handlers.scripts.helperclasses.DataDownloader;
-import com.telegram.bot.handlers.scripts.helperclasses.ReplyKeyboards;
-import com.telegram.bot.handlers.scripts.helperclasses.storage.FixedSizeList;
-import com.telegram.bot.handlers.scripts.helperclasses.storage.Storage;
+import com.telegram.bot.helperclasses.ReplyKeyboards;
+import com.telegram.bot.storage.FixedSizeList;
+import com.telegram.bot.storage.Storage;
 import com.telegram.convertations.conversions.SupportedFileExtensions;
 import com.telegram.convertations.converters.Converter;
 import com.telegram.convertations.converters.Img2PdfConverter;
 import com.telegram.utils.FileNameTools;
-import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.objects.Document;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.PhotoSize;
@@ -22,26 +22,28 @@ import java.util.LinkedList;
 import java.util.List;
 
 
-public class ConvertScript extends AbstractScript {
+public class ConvertScript implements Script {
     private static final String STOP_WORD = "Done";
     public static final int CAPACITY = 10;
     private boolean running = false;
-    private final String chatId;
+
     private final Converter converter = new Img2PdfConverter();
     private final FileLoadingManager<String, String> loadingManager = FileLoadingManagerImpl.getInstance();
     private final Storage<Document> images = new FixedSizeList<>(CAPACITY);
+    private final SenderChatService senderChatService;
+    private final DownloaderChatService downloaderChatService;
+    private final ChatStates chatStates;
 
-
-    public ConvertScript(TelegramLongPollingBot bot, String chatId) {
-        super(bot);
-        this.chatId = chatId;
+    public ConvertScript(SenderChatService senderChatService, DownloaderChatService downloaderChatService, ChatStates chatStates) {
+        this.senderChatService = senderChatService;
+        this.downloaderChatService = downloaderChatService;
+        this.chatStates = chatStates;
     }
 
     @Override
     public void start() {
         running = true;
-        LOG.debug("[{}] Image converting script has been started.", chatId);
-        sendTextReply(chatId, "Upload your photos", ReplyKeyboards.getButtonWithText(STOP_WORD));
+        senderChatService.sendTextReply("Upload your photos", ReplyKeyboards.getButtonWithText(STOP_WORD));
     }
 
     @Override
@@ -52,8 +54,7 @@ public class ConvertScript extends AbstractScript {
                 if (message.hasText()) {
                     if (STOP_WORD.equals(message.getText())) {
                         if (images.isEmpty()) {
-                            sendTextReply(chatId, "You have to upload at least one photo", ReplyKeyboards.removeKeyboard());
-                            LOG.debug("[{}] No photo has been uploaded.", chatId);
+                            senderChatService.sendTextReply("You have to upload at least one photo", ReplyKeyboards.removeKeyboard());
                         } else {
                             convertAndUploadImages();
                         }
@@ -62,23 +63,20 @@ public class ConvertScript extends AbstractScript {
                 } else if (message.hasDocument()) {
                     Document document = message.getDocument();
                     if (hasRightExtensions(document)) {
-                        if (!addDocumentWithFailMessage(document, chatId)) {
+                        if (!addDocumentWithFailMessage(document)) {
                             convertAndUploadImages();
                             stop();
                         }
                     } else {
-                        sendTextReply(chatId, "Wrong file extension");
-                        LOG.debug("[{}] Document {} has wrong extension.", chatId, document.getFileName());
+                        senderChatService.sendTextReply("Wrong file extension");
                     }
                 } else if (message.hasPhoto()) {
                     List<PhotoSize> photos = message.getPhoto();
                     Document document = photoSizeToDocument(photos.get(photos.size() - 1));
-                    if (!addDocumentWithFailMessage(document, chatId)) {
+                    if (!addDocumentWithFailMessage(document)) {
                         convertAndUploadImages();
                         stop();
                     }
-                    LOG.debug("[{}] Photo {} has been downloaded. Current fileId is {}.",
-                            chatId, document.getFileUniqueId(), document.getFileId());
                 }
             }
         }
@@ -92,19 +90,16 @@ public class ConvertScript extends AbstractScript {
     @Override
     public void stop() {
         if (running) {
-            ChatStates.getInstance().put(chatId, null);
-            LOG.debug("[{}] Image converting script has been stopped.", chatId);
+            chatStates.put(null);
         }
     }
 
     private void convertAndUploadImages() {
         String ids = combineIds();
-        if (!(loadingManager.contains(ids) && sendDocumentReply(chatId, loadingManager.get(ids)) != null)) {
+        if (!(loadingManager.contains(ids) && senderChatService.sendDocumentReply(loadingManager.get(ids)) != null)) {
             Document uploadedDocument = sendDocument(convertImages(downloadImages()));
             if (uploadedDocument != null) {
                 saveDocumentInLoadingManager(ids, uploadedDocument);
-                LOG.debug("[{}] Document {} has been saved in loading manager. Photo ids: {}. FileId: {}.",
-                        chatId, uploadedDocument.getFileUniqueId(), ids, uploadedDocument.getFileId());
             }
         }
     }
@@ -116,10 +111,9 @@ public class ConvertScript extends AbstractScript {
     }
 
     private List<File> downloadImages() {
-        DataDownloader downloader = new DataDownloader(bot);
         List<File> result = new LinkedList<>();
         for (Document img : images) {
-            result.add(downloader.downloadDocument(img));
+            result.add(downloaderChatService.downloadDocument(img));
         }
         return result;
     }
@@ -132,7 +126,7 @@ public class ConvertScript extends AbstractScript {
 
     private Document sendDocument(File file) {
         String filename = file.getName();
-        Document uploadedDocument = sendDocumentReply(chatId, file,
+        Document uploadedDocument = senderChatService.sendDocumentReply(file,
                 "images" + filename.substring(filename.lastIndexOf('.')), ReplyKeyboards.removeKeyboard());
         file.delete();
         return uploadedDocument;
@@ -142,11 +136,10 @@ public class ConvertScript extends AbstractScript {
         loadingManager.put(id, document.getFileId());
     }
 
-    private boolean addDocumentWithFailMessage(Document document, String chatId) {
+    private boolean addDocumentWithFailMessage(Document document) {
         if (!images.add(document)) {
             int capacity = images.getCapacity();
-            sendTextReply(chatId, String.format("You have already loaded maximum number of photos (%d)", capacity));
-            LOG.debug("[{}] Maximum number of photos ({}) has already been loaded.", chatId, capacity);
+            senderChatService.sendTextReply(String.format("You have already loaded maximum number of photos (%d)", capacity));
             return false;
         }
         return true;

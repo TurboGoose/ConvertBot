@@ -1,4 +1,4 @@
-package com.telegram.bot.handlers.scripts.helperclasses;
+package com.telegram.bot.helperclasses;
 
 import org.junit.jupiter.api.Test;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;

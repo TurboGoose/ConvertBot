@@ -1,7 +1,5 @@
-package com.telegram.bot.handlers.scripts.helperclasses;
+package com.telegram.bot.storage;
 
-import com.telegram.bot.handlers.scripts.helperclasses.storage.FixedSizeList;
-import com.telegram.bot.handlers.scripts.helperclasses.storage.Storage;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
