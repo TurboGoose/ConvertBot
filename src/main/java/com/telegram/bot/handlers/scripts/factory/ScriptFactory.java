@@ -8,6 +8,7 @@ import com.telegram.bot.chatstates.ChatStates;
 import com.telegram.bot.chatstates.ChatStatesImpl;
 import com.telegram.bot.handlers.scripts.ConvertScript;
 import com.telegram.bot.handlers.scripts.Script;
+import com.telegram.convertations.converters.Img2PdfConverter;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 
 public class ScriptFactory {
@@ -17,7 +18,7 @@ public class ScriptFactory {
         ChatStates states = new ChatStatesImpl(chatId);
 
         if (scriptClass == ConvertScript.class) {
-            return new ConvertScript(senderService, downloaderService, states);
+            return new ConvertScript(new Img2PdfConverter(), senderService, downloaderService, states);
         }
         return null;
     }

@@ -10,7 +10,6 @@ import com.telegram.bot.storage.FixedSizeList;
 import com.telegram.bot.storage.Storage;
 import com.telegram.convertations.conversions.SupportedFileExtensions;
 import com.telegram.convertations.converters.Converter;
-import com.telegram.convertations.converters.Img2PdfConverter;
 import com.telegram.utils.FileNameTools;
 import org.telegram.telegrambots.meta.api.objects.Document;
 import org.telegram.telegrambots.meta.api.objects.Message;
@@ -27,14 +26,16 @@ public class ConvertScript implements Script {
     public static final int CAPACITY = 10;
     private boolean running = false;
 
-    private final Converter converter = new Img2PdfConverter();
+    private final Converter converter;
     private final FileLoadingManager<String, String> loadingManager = FileLoadingManagerImpl.getInstance();
     private final Storage<Document> images = new FixedSizeList<>(CAPACITY);
     private final SenderChatService senderChatService;
     private final DownloaderChatService downloaderChatService;
     private final ChatStates chatStates;
 
-    public ConvertScript(SenderChatService senderChatService, DownloaderChatService downloaderChatService, ChatStates chatStates) {
+    public ConvertScript(Converter converter, SenderChatService senderChatService,
+                         DownloaderChatService downloaderChatService, ChatStates chatStates) {
+        this.converter = converter;
         this.senderChatService = senderChatService;
         this.downloaderChatService = downloaderChatService;
         this.chatStates = chatStates;
@@ -42,8 +43,10 @@ public class ConvertScript implements Script {
 
     @Override
     public void start() {
-        running = true;
-        senderChatService.sendTextReply("Upload your photos", ReplyKeyboards.getButtonWithText(STOP_WORD));
+        if (!running) {
+            running = true;
+            senderChatService.sendTextReply("Upload your photos", ReplyKeyboards.getButtonWithText(STOP_WORD));
+        }
     }
 
     @Override
@@ -82,16 +85,17 @@ public class ConvertScript implements Script {
         }
     }
 
-    private boolean hasRightExtensions(Document document) {
-        String extension = FileNameTools.extractExtension(document.getFileName());
-        return SupportedFileExtensions.get().contains(extension.toLowerCase());
-    }
-
     @Override
     public void stop() {
         if (running) {
+            running = false;
             chatStates.put(null);
         }
+    }
+
+    private boolean hasRightExtensions(Document document) {
+        String extension = FileNameTools.extractExtension(document.getFileName());
+        return SupportedFileExtensions.get().contains(extension.toLowerCase());
     }
 
     private void convertAndUploadImages() {
@@ -145,7 +149,7 @@ public class ConvertScript implements Script {
         return true;
     }
 
-    private Document photoSizeToDocument(PhotoSize photoSize) {
+    protected Document photoSizeToDocument(PhotoSize photoSize) {
         Document doc = new Document();
         doc.setFileId(photoSize.getFileId());
         doc.setFileUniqueId(photoSize.getFileUniqueId());
